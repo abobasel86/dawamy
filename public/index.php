@@ -12,7 +12,10 @@ if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php'))
 
 // Register the Composer autoloader...
 require __DIR__.'/../vendor/autoload.php';
-putenv('OPENSSL_CONF=C:\laragon\bin\apache\httpd-2.4.62-240904-win64-VS17\conf\openssl.cnf');
+$confPath = env('OPENSSL_CONF_PATH');
+if ($confPath) {
+    putenv("OPENSSL_CONF={$confPath}");
+}
 
 
 // Bootstrap Laravel and handle the request...
