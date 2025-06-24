@@ -41,6 +41,7 @@ Route::middleware(['auth'])->group(function () {
     // هذا المسار سيعلم الإشعار كمقروء ثم يوجهك للرابط
     Route::get('/notifications/read/{notification}', [NotificationController::class, 'readAndRedirect'])->name('notifications.read');
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push_subscriptions.store');
+    Route::post('/push-subscriptions/delete', [PushSubscriptionController::class, 'destroy'])->name('push_subscriptions.destroy');
 
     
     // Employee Leave Requests Page
