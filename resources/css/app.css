@@ -1,0 +1,25 @@
+@font-face {
+    font-family: 'Almarai';
+    src: url('/fonts/almarai/Almarai-Regular.ttf') format('truetype');
+    font-weight: 400; /* 400 هو الوزن العادي normal */
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Almarai';
+    src: url('/fonts/almarai/Almarai-Bold.ttf') format('truetype');
+    font-weight: 700; /* 700 هو الوزن العريض bold */
+    font-style: normal;
+    font-display: swap;
+}
+
+body {
+    font-family: 'Almarai', sans-serif !important;
+}
+/* ======================================== */
+
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
