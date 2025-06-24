@@ -60,6 +60,16 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 
 If you are using Laravel on Windows with a stack such as Laragon, set the `OPENSSL_CONF_PATH` environment variable to the location of your `openssl.cnf` file. This ensures that OpenSSL commands work correctly when generating keys or certificates.
 
+## Web Push Configuration
+
+This application uses VAPID keys for sending web push notifications. Define the following variables in your `.env` file:
+
+```
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:example@example.com
+```
+
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
