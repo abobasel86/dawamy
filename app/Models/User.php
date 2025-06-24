@@ -237,7 +237,7 @@ class User extends Authenticatable
     }
 	
 	
-	public function updatePushSubscription($endpoint, $key, $token)
+        public function updatePushSubscription($endpoint, $key, $token)
 {
     return $this->pushSubscriptions()->updateOrCreate(
         ['endpoint' => $endpoint],
@@ -246,6 +246,11 @@ class User extends Authenticatable
             'auth_token' => $token,
         ]
     );
+}
+
+        public function deletePushSubscription(string $endpoint)
+{
+    return $this->pushSubscriptions()->where('endpoint', $endpoint)->delete();
 }
 
 /**
