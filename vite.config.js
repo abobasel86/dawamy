@@ -16,8 +16,8 @@ export default defineConfig({
         
         // استخدام شهادات الأمان الصحيحة الخاصة بـ Laragon
         https: {
-            key: fs.readFileSync('C:/laragon/etc/ssl/laragon.key'),
-            cert: fs.readFileSync('C:/laragon/etc/ssl/laragon.crt'),
+            key: fs.readFileSync(process.env.VITE_SSL_KEY || 'C:/laragon/etc/ssl/laragon.key'),
+            cert: fs.readFileSync(process.env.VITE_SSL_CERT || 'C:/laragon/etc/ssl/laragon.crt'),
         },
 
         // ===== السطر الأهم لحل المشكلة الحالية =====
