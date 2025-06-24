@@ -1,3 +1,4 @@
+<?php
 return [
     'vapid' => [
         'subject' => env('VAPID_SUBJECT', 'mailto:example@example.com'),
