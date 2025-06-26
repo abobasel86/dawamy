@@ -9,29 +9,17 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                <section>
-                    <header>
-                        <h2 class="text-lg font-medium text-gray-900">
-                            تفعيل إشعارات المتصفح
-                        </h2>
-                        <p class="mt-1 text-sm text-gray-600">
-                            فعّل الإشعارات ليصلك كل جديد مباشرة على جهازك حتى لو كان المتصفح أو التطبيق مغلقاً.
-                        </p>
-                    </header>
-                    <button id="enable-push-btn" class="btn-primary mt-4">تفعيل الإشعارات</button>
-                </section>
-            </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
                     @include('profile.partials.update-profile-information-form')
                 </div>
             </div>
+            
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
                     @include('profile.partials.update-password-form')
                 </div>
             </div>
+            
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
                     @include('profile.partials.delete-user-form')
@@ -40,100 +28,131 @@
 
         </div>
     </div>
-</x-app-layout>
 
-{{-- =================================================================== --}}
-{{-- ===== الكود الجديد والمباشر لتشغيل الزر (تمت إزالة @push) ===== --}}
-{{-- =================================================================== --}}
-<script>
-function pushNotifications() {
-    return {
-        isPushEnabled: {{ auth()->user()->pushSubscriptions()->count() > 0 ? 'true' : 'false' }},
-        pushButtonDisabled: true,
+    {{-- ====================================================================== --}}
+    {{-- ==== START: JAVASCRIPT FOR PUSH NOTIFICATIONS (ALPINE.JS) ==== --}}
+    {{-- ====================================================================== --}}
+    @push('scripts')
+    <script>
+        // دالة لترميز المفتاح العام (VAPID Public Key)
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
 
-        init() {
-            if (!('serviceWorker' in navigator && 'PushManager' in window)) {
-                console.warn('Push messaging is not supported');
-                this.pushButtonDisabled = true;
-                return;
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
             }
-
-            navigator.serviceWorker.ready.then(() => {
-                this.pushButtonDisabled = false;
-            });
-        },
-
-        enableNotifications() {
-            this.pushButtonDisabled = true;
-            navigator.serviceWorker.getRegistration().then(registration => {
-                const subscribeOptions = {
-                    userVisibleOnly: true,
-                    applicationServerKey: '{{ config('webpush.vapid.public_key') }}'
-                };
-                return registration.pushManager.subscribe(subscribeOptions);
-            }).then(pushSubscription => {
-                this.storePushSubscription(pushSubscription);
-                this.isPushEnabled = true;
-                this.pushButtonDisabled = false;
-            }).catch(error => {
-                console.error('Error subscribing for push notifications', error);
-                this.pushButtonDisabled = false;
-            });
-        },
-
-        disableNotifications() {
-            this.pushButtonDisabled = true;
-            navigator.serviceWorker.getRegistration().then(registration => {
-                return registration.pushManager.getSubscription();
-            }).then(subscription => {
-                if (subscription) {
-                    return subscription.unsubscribe();
-                }
-            }).then(() => {
-                this.deletePushSubscription();
-                this.isPushEnabled = false;
-                this.pushButtonDisabled = false;
-            }).catch(error => {
-                console.error('Error unsubscribing from push notifications', error);
-                this.pushButtonDisabled = false;
-            });
-        },
-
-        storePushSubscription(subscription) {
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            axios.post('/push-subscriptions', subscription, {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': token
-                }
-            }).then(response => {
-                console.log('Subscription stored');
-            }).catch(error => {
-                console.error('Error storing push subscription', error);
-            });
-        },
-
-        deletePushSubscription() {
-            navigator.serviceWorker.getRegistration().then(registration => {
-                return registration.pushManager.getSubscription();
-            }).then(subscription => {
-                if (subscription) {
-                    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                    axios.post('/push-subscriptions/delete', {
-                        endpoint: subscription.endpoint
-                    }, {
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': token
-                        }
-                    }).then(response => {
-                        console.log('Subscription deleted');
-                    }).catch(error => {
-                        console.error('Error deleting push subscription', error);
-                    });
-                }
-            });
+            return outputArray;
         }
-    };
-}
-</script>
+
+        // المكون الرئيسي لإدارة الإشعارات باستخدام Alpine.js
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('pushManager', () => ({
+                isPushEnabled: false,
+                isProcessing: false,
+                pushSupportError: '',
+                
+                // يتم استدعاؤها عند تحميل الصفحة
+                async init() {
+                    if (!('serviceWorker' in navigator && 'PushManager' in window)) {
+                        this.pushSupportError = 'عذراً، الإشعارات الفورية غير مدعومة في هذا المتصفح.';
+                        return;
+                    }
+
+                    try {
+                        const registration = await navigator.serviceWorker.ready;
+                        const subscription = await registration.pushManager.getSubscription();
+                        this.isPushEnabled = subscription !== null;
+                    } catch (error) {
+                        console.error('Error checking push subscription status:', error);
+                        this.pushSupportError = 'لم نتمكن من التحقق من حالة الإشعارات.';
+                    }
+                },
+
+                // دالة للاشتراك في الإشعارات
+                async subscribe() {
+                    this.isProcessing = true;
+                    this.pushSupportError = '';
+
+                    try {
+                        const registration = await navigator.serviceWorker.ready;
+                        const vapidPublicKey = "{{ config('webpush.vapid.public_key') }}";
+
+                        if (!vapidPublicKey) {
+                            console.error('VAPID public key is not set in .env file.');
+                            this.pushSupportError = 'خطأ في الإعدادات من جانب الخادم.';
+                            this.isProcessing = false;
+                            return;
+                        }
+
+                        const subscription = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+                        });
+                        
+                        await fetch('/push-subscriptions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').content,
+                            },
+                            body: JSON.stringify(subscription),
+                        });
+
+                        this.isPushEnabled = true;
+
+                    } catch (error) {
+                        console.error('Error subscribing to push notifications:', error);
+                        if (error.name === 'NotAllowedError') {
+                            this.pushSupportError = 'لقد رفضت إذن الإشعارات. يرجى تفعيله من إعدادات المتصفح.';
+                        } else {
+                            this.pushSupportError = 'فشل الاشتراك في الإشعارات.';
+                        }
+                    } finally {
+                        this.isProcessing = false;
+                    }
+                },
+
+                // دالة لإلغاء الاشتراك
+                async unsubscribe() {
+                    this.isProcessing = true;
+                    this.pushSupportError = '';
+
+                    try {
+                        const registration = await navigator.serviceWorker.ready;
+                        const subscription = await registration.pushManager.getSubscription();
+
+                        if (subscription) {
+                            await fetch('/push-subscriptions', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').content,
+                                },
+                                body: JSON.stringify({ endpoint: subscription.endpoint }),
+                            });
+
+                            await subscription.unsubscribe();
+                            this.isPushEnabled = false;
+                        }
+                    } catch (error) {
+                        console.error('Error unsubscribing:', error);
+                        this.pushSupportError = 'فشل إلغاء الاشتراك.';
+                    } finally {
+                        this.isProcessing = false;
+                    }
+                }
+            }));
+        });
+    </script>
+    @endpush
+    {{-- ====================================================================== --}}
+    {{-- ======================= END: JAVASCRIPT SECTION ====================== --}}
+    {{-- ====================================================================== --}}
+
+</x-app-layout>

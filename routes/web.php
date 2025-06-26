@@ -12,7 +12,7 @@ use App\Http\Controllers\Admin\BalanceController;
 use App\Http\Controllers\Admin\DocumentTypeController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Manager\TeamController;
-use App\Http\Controllers\NotificationController; // تأكد من وجود هذا السطر
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushSubscriptionController;
 
 /*
@@ -36,10 +36,13 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/punch-in', [AttendanceController::class, 'punchIn'])->name('attendance.punchin');
     Route::post('/punch-out', [AttendanceController::class, 'punchOut'])->name('attendance.punchout');
     Route::get('/attendance/history', [AttendanceController::class, 'history'])->name('attendance.history');
-	// ===== مسارات الإشعارات الصحيحة =====
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    // هذا المسار سيعلم الإشعار كمقروء ثم يوجهك للرابط
-    Route::get('/notifications/read/{notification}', [NotificationController::class, 'readAndRedirect'])->name('notifications.read');
+    Route::get('/notifications/{notification}', [NotificationController::class, 'readAndRedirect'])->name('notifications.read');
+    // مسار لعرض كل الإشعارات
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index'); // <-- أضف هذا السطر
+	// مسار لجلب ملخص الإشعارات (العدد الإجمالي غير المقروء + آخر 5)
+    Route::get('/notifications-summary', [NotificationController::class, 'summary'])->name('notifications.summary');
+    // مسار لتحديد إشعار كمقروء
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push_subscriptions.store');
     Route::post('/push-subscriptions/delete', [PushSubscriptionController::class, 'destroy'])->name('push_subscriptions.destroy');
 

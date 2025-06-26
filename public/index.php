@@ -17,9 +17,5 @@ require __DIR__.'/../vendor/autoload.php';
 // Bootstrap Laravel and handle the request...
 /** @var Application $app */
 $app = require_once __DIR__.'/../bootstrap/app.php';
-$confPath = env('OPENSSL_CONF_PATH');
-if ($confPath) {
-    putenv("OPENSSL_CONF={$confPath}");
-}
 
 $app->handleRequest(Request::capture());

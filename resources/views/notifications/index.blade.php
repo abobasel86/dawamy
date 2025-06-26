@@ -10,8 +10,9 @@
             <div class="bg-white shadow-sm sm:rounded-lg">
                 <div class="p-0">
                     @forelse($notifications as $notification)
-                        {{-- الرابط الآن يشير إلى المسار الجديد الذي يعلم الإشعار كمقروء --}}
+                        {{-- === START: التصحيح هنا === --}}
                         <a href="{{ route('notifications.read', $notification->id) }}" class="block p-4 border-b hover:bg-gray-50 {{ $notification->read_at ? '' : 'bg-blue-50' }}">
+                        {{-- === END: التصحيح هنا === --}}
                             <p class="{{ $notification->read_at ? 'font-normal' : 'font-bold' }} text-gray-800">{{ data_get($notification, 'data.message') }}</p>
                             <small class="text-gray-500">{{ $notification->created_at->diffForHumans() }}</small>
                         </a>

@@ -1,87 +1,71 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" dir="rtl">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Dawamy') }}</title>
+    <title>{{ config('app.name', 'Dawamy') }}</title>
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <!-- تضمين خط المراعي من جوجل -->
-        <!--<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">-->
-		<link rel="manifest" href="{{ asset('manifest.json') }}">
-        <meta name="theme-color" content="#156b68">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black">
-        <meta name="apple-mobile-web-app-title" content="دوامي">
-		<link rel="apple-touch-icon" href="/images/icons/apple-192x192.png">
-        <!-- Scripts -->
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
-		
-        <!-- ======================================================= -->
-        <!--           === CSS مخصص للتصميم الجديد ===              -->
-        <!-- ======================================================= -->
-        <style>
-            /* تعريف متغيرات الألوان لسهولة الاستخدام */
-            :root {
-                --primary-color: #156b68; /* اللون الأساسي - الأخضر */
-                --secondary-color: #caa453; /* اللون الثانوي - الذهبي */
-                --primary-hover: #10524f; /* لون عند مرور الماوس */
-                --text-color: #333;
-            }
-			
+    {{-- ============= START: PWA & MOBILE CONFIG ============= --}}
+    <meta name="theme-color" content="#156b68">
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="دوامي">
+    <link rel="apple-touch-icon" href="/images/icons/apple-192x192.png">
+    {{-- ============== END: PWA & MOBILE CONFIG ============== --}}
 
-	
-            /* تطبيق خط المراعي على كامل جسم الصفحة */
-            body {
-                font-family: 'Almarai', sans-serif;
-                color: var(--text-color);
-            }
-            
-            /* تنسيق الأزرار الأساسية */
-            .btn-primary {
-                background-color: var(--primary-color);
-                color: white;
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                font-weight: 700;
-                transition: background-color 0.3s;
-            }
-            .btn-primary:hover {
-                background-color: var(--primary-hover);
-            }
-
-            .btn-secondary {
-                background-color: var(--secondary-color);
-                color: white;
-                padding: 0.75rem 1.5rem;
-                border-radius: 0.5rem;
-                font-weight: 700;
-                transition: background-color 0.3s;
-            }
-             .btn-secondary:hover {
-                background-color: #b9944a;
-            }
-
-            /* تنسيق خاص بالروابط في القائمة العلوية */
-            .nav-link-custom.active {
-                color: var(--primary-color);
-                border-bottom: 2px solid var(--primary-color);
-                font-weight: 700;
-            }
-
-            /* تنسيق العناوين الرئيسية للصفحات */
-            .header-title {
-                color: var(--primary-color);
-            }
-        </style>
-
-    </head>
-    <body class="font-sans antialiased">
-    {{-- تم إضافة flex flex-col هنا --}}
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <style>
+        :root {
+            --primary-color: #156b68;
+            --secondary-color: #caa453;
+            --primary-hover: #10524f;
+            --text-color: #333;
+        }
+        body {
+            /* font-family: 'Almarai', sans-serif; */
+            color: var(--text-color);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: background-color 0.3s;
+        }
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 700;
+            transition: background-color 0.3s;
+        }
+        .btn-secondary:hover {
+            background-color: #b9944a;
+        }
+        .nav-link-custom.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            font-weight: 700;
+        }
+        .header-title {
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
     <div class="min-h-screen flex flex-col bg-gray-100">
         @include('layouts.navigation')
 
@@ -93,85 +77,138 @@
             </header>
         @endif
 
-        {{-- تم إضافة flex-grow هنا --}}
         <main class="flex-grow">
             {{ $slot }}
         </main>
     </div>
-        
-        @stack('scripts')
+
+    {{-- ================================================================= --}}
+    {{-- ============= START: ALL REQUIRED SCRIPTS AT THE END ============ --}}
+    {{-- ================================================================= --}}
+
     <script>
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then(registration => {
-                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
-                        })
-                        .catch(err => {
-                            console.log('ServiceWorker registration failed: ', err);
-                        });
-                });
-            }
-        </script>
-		
-		<script>
-		// public/js/enable-push.js or inside a script tag in app.blade.php
-
-const vapidPublicKey = '{{ config('webpush.vapid.public_key') }}';
-
-const pushButton = document.getElementById('enable-push-btn');
-
-if (pushButton) {
-    pushButton.addEventListener('click', function() {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            navigator.serviceWorker.ready.then(function(registration) {
-                subscribeUser(registration);
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                    })
+                    .catch(err => {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
             });
-        } else {
-            alert('عذراً، الإشعارات غير مدعومة في هذا المتصفح.');
         }
-    });
-}
+    </script>
 
-function subscribeUser(registration) {
-    const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
-    registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKey
-    })
-    .then(function(subscription) {
-        console.log('User is subscribed.');
-        // إرسال الاشتراك إلى السيرفر
-        updateSubscriptionOnServer(subscription);
-        alert('تم تفعيل الإشعارات بنجاح!');
-    })
-    .catch(function(err) {
-        console.log('Failed to subscribe the user: ', err);
-        alert('فشل تفعيل الإشعارات. يرجى التأكد من الموافقة على الأذونات.');
-    });
-}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // تعريف دالة تسجيل الخروج الذكية
+        const handleSmartLogout = async function (event) {
+            event.preventDefault();
+            const form = event.target; // الحصول على النموذج الذي تم الضغط عليه
 
-function updateSubscriptionOnServer(subscription) {
-    fetch('/push-subscriptions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify(subscription)
-    });
-}
+            if (!('serviceWorker' in navigator && 'PushManager' in window)) {
+                form.submit(); // خروج مباشر إذا كانت الإشعارات غير مدعومة
+                return;
+            }
 
-function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+
+                if (subscription) {
+                    console.log('Unsubscribing before logout...');
+                    // إرسال طلب الحذف للخادم
+                    await fetch('/push-subscriptions/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').content,
+                        },
+                        body: JSON.stringify({ endpoint: subscription.endpoint }),
+                    });
+                    // إلغاء الاشتراك من المتصفح
+                    await subscription.unsubscribe();
+                }
+            } catch (error) {
+                console.error('Could not unsubscribe, but proceeding with logout.', error);
+            } finally {
+                // إتمام عملية تسجيل الخروج في كل الأحوال
+                form.submit();
+            }
+        };
+
+        // === START: التصحيح هنا ===
+        // استهداف النموذجين وتطبيق نفس الدالة عليهما
+        const desktopLogoutForm = document.getElementById('logout-form');
+        const mobileLogoutForm = document.getElementById('logout-form-mobile');
+
+        if (desktopLogoutForm) {
+            desktopLogoutForm.addEventListener('submit', handleSmartLogout);
+        }
+        if (mobileLogoutForm) {
+            mobileLogoutForm.addEventListener('submit', handleSmartLogout);
+        }
+        // === END: التصحيح هنا ===
+    });
+</script>
+
+    <script>
+        function notificationsComponent() {
+            return {
+                isOpen: false,
+                totalUnread: 0,
+                latestNotifications: [],
+
+                init() {
+                    this.fetchSummary();
+                    // تحديث الإشعارات كل دقيقة
+                    setInterval(() => {
+                        this.fetchSummary();
+                    }, 60000);
+                },
+
+                fetchSummary() {
+                    fetch('{{ route("notifications.summary") }}')
+                        .then(response => response.json())
+                        .then(data => {
+                            this.totalUnread = data.total_unread;
+                            this.latestNotifications = data.latest_notifications;
+                        })
+                        .catch(error => console.error('Error fetching notifications summary:', error));
+                },
+
+                read(notification) {
+    // إذا كان الإشعار غير مقروء، قم بتحديثه في الواجهة والخادم
+    if (!notification.read_at) {
+        this.totalUnread = Math.max(0, this.totalUnread - 1);
+        
+        let targetNotification = this.latestNotifications.find(n => n.id === notification.id);
+        if (targetNotification) {
+            targetNotification.read_at = new Date().toISOString();
+        }
+
+        fetch(`/notifications/${notification.id}/read`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').content
+            }
+        });
     }
-    return outputArray;
+    
+    // ===== START: الحل النهائي هنا =====
+    // التحقق من وجود الرابط الكامل والانتقال إليه مباشرة
+    if (notification.data.url) {
+        window.location.href = notification.data.url;
+    } else {
+        console.error('Notification URL is missing:', notification);
+    }
+    // ===== END: الحل النهائي هنا =====
 }
-		</script>
-     </body>
+            }
+        }
+    </script>
+    
+    @stack('scripts')
+</body>
 </html>

@@ -42,10 +42,7 @@
                 <td class="px-6 py-4 whitespace-nowrap">{{ $leaveRequest->user->name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">{{ $leaveRequest->leaveType->name }}</td>
 				<td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{{ $leaveRequest->reason }}</td>
-                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-800">
-                <td class="px-6 py-4 whitespace-nowrap">
-                    {{ $leaveRequest->created_at->format('Y-m-d') }}
-                </td>
+                <td class="px-6 py-4 whitespace-nowrap">{{ $leaveRequest->created_at->format('Y-m-d') }}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800">
                     @if($leaveRequest->leaveType->unit === 'days')
                         <div><strong>من:</strong> {{ \Carbon\Carbon::parse($leaveRequest->start_date)->format('Y-m-d') }}</div>

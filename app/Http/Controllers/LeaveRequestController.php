@@ -66,13 +66,12 @@ class LeaveRequestController extends Controller
             'leave_type_id' => 'required|exists:leave_types,id',
             'reason' => 'required|string|max:255',
             'attachments.*' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'delegated_user_id' => 'nullable|exists:users,id', // <-- التحقق من الحقل الجديد
+            'delegated_user_id' => 'nullable|exists:users,id',
         ]);
 
         $user = Auth::user();
         $leaveType = LeaveType::find($request->leave_type_id);
-		
-		// التحقق من ضرورة وجود موظف مفوض
+        
         if ($leaveType->requires_delegation && !$request->filled('delegated_user_id')) {
              return back()->withInput()->with('error', 'هذا النوع من الإجازات يتطلب تحديد موظف مفوض.');
         }
@@ -108,20 +107,17 @@ class LeaveRequestController extends Controller
             return redirect()->route('leaves.index')->with('error', "رصيدك المتاح من {$leaveType->name} هو {$availableBalance} فقط.");
         }
 
-		// ... (منطق التحقق من الرصيد والتواريخ يبقى كما هو) ...
         $approvers = [];
         $level = 1;
         $addedApproverIds = [];
 
-        // المستوى الأول: المدير المباشر (الفعلي أو مدير القسم)
-        $manager = $user->manager; // Uses the new smart accessor
+        $manager = $user->manager;
         if (!$manager) {
             return back()->with('error', 'لم يتم تحديد مدير مباشر أو مدير قسم لك. يرجى مراجعة المسؤول.');
         }
         $approvers[] = ['approver_id' => $manager->id, 'level' => $level++];
         $addedApproverIds[] = $manager->id;
 
-        // المستوى الثاني (اختياري): الأمين العام المساعد
         if ($user->department && $user->department->requires_assistant_approval) {
             $assistantSG = User::getAssistantSecretaryGeneral();
             if ($assistantSG && !in_array($assistantSG->id, $addedApproverIds)) {
@@ -130,7 +126,6 @@ class LeaveRequestController extends Controller
             }
         }
 
-        // المستوى الأخير: الأمين العام
         $secretaryGeneral = User::getSecretaryGeneral();
         if ($secretaryGeneral) {
             if (!in_array($secretaryGeneral->id, $addedApproverIds)) {
@@ -148,7 +143,7 @@ class LeaveRequestController extends Controller
             'start_time' => $startTime,
             'end_time' => $endTime,
             'reason' => $request->reason,
-            'delegated_user_id' => $request->delegated_user_id, // حفظ الموظف المفوض
+            'delegated_user_id' => $request->delegated_user_id,
             'status' => 'pending',
         ]);
         
@@ -159,24 +154,25 @@ class LeaveRequestController extends Controller
             }
         }
         
-        if (!$user->manager_id) {
-            return redirect()->route('leaves.index')->with('error', 'لم يتم تحديد مدير مباشر لك. يرجى مراجعة المسؤول.');
-        }
-
-        // حفظ سلسلة الموافقات في قاعدة البيانات
         $leaveRequest->approvals()->createMany($approvers);
-		
-		// إرسال إشعار لأول موافق في السلسلة
+        
+        // --- START: التصحيح النهائي هنا ---
+
+        // إرسال إشعار لأول موافق في السلسلة مع تمرير الرابط الصحيح
         $firstApprover = $leaveRequest->approvals()->orderBy('level', 'asc')->first()?->approver;
         if ($firstApprover) {
-            $firstApprover->notify(new NewLeaveRequestForApproval($leaveRequest));
+            $url = route('manager.approvals.index');
+            $firstApprover->notify(new NewLeaveRequestForApproval($leaveRequest, $url));
         }
 
-        // إرسال إشعار للموظف المفوض (إذا تم تحديده)
+        // إرسال إشعار للموظف المفوض (إذا تم تحديده) مع تمرير الرابط الصحيح
         if ($leaveRequest->delegatedUser) {
-            $leaveRequest->delegatedUser->notify(new UserDelegated($leaveRequest));
+            $url = route('dashboard');
+            $leaveRequest->delegatedUser->notify(new UserDelegated($leaveRequest, $url));
         }
-		
+        
+        // --- END: التصحيح النهائي هنا ---
+
         return redirect()->route('leaves.index')->with('success', 'تم إرسال طلب الإجازة بنجاح.');
     }
 }

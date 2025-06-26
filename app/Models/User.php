@@ -254,19 +254,13 @@ class User extends Authenticatable
 }
 
 /**
-     * العلاقة مع جدول اشتراكات الإشعارات
-     */
-    public function pushSubscriptions(): HasMany
-    {
-        return $this->hasMany(\App\Models\PushSubscription::class);
-    }
-
-    /**
-     * الدالة التي يستخدمها نظام الإشعارات لجلب الاشتراكات
-     */
-    public function routeNotificationForWebPush()
+ * The user's push subscriptions.
+ *
+ * @return \Illuminate\Database\Eloquent\Relations\HasMany
+ */
+public function pushSubscriptions()
 {
-    return $this->pushSubscriptions;
+    return $this->hasMany(\NotificationChannels\WebPush\PushSubscription::class);
 }
 
 }
