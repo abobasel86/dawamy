@@ -11,6 +11,7 @@ use App\Models\Location;
 use App\Models\LeaveType;
 use App\Models\LeaveRequest;
 use Carbon\Carbon;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
@@ -56,9 +57,12 @@ class ReportController extends Controller
         if ($request->filled('balance_user_ids') && is_array($request->balance_user_ids)) {
             $balanceUsersQuery->whereIn('id', $request->balance_user_ids);
         }
-        $balanceUsers = $balanceUsersQuery->get();
+        if ($request->filled('balance_name')) {
+            $balanceUsersQuery->where('name', 'like', '%' . $request->balance_name . '%');
+        }
+        $balanceUsers = $balanceUsersQuery->orderBy('name')->paginate(20, ['*'], 'balance_page')->withQueryString();
         $leaveTypes = LeaveType::where('show_in_balance', true)->get();
-        $balanceData = [];
+        $balanceCollection = collect();
         foreach ($balanceUsers as $user) {
             $userBalances = [];
             foreach ($leaveTypes as $leaveType) {
@@ -81,11 +85,23 @@ class ReportController extends Controller
                 ];
             }
 
-            $balanceData[] = [
+            $balanceCollection->push([
                 'name' => $user->name,
                 'balances' => $userBalances,
-            ];
+            ]);
         }
+
+        $balanceData = new LengthAwarePaginator(
+            $balanceCollection,
+            $balanceUsers->total(),
+            $balanceUsers->perPage(),
+            $balanceUsers->currentPage(),
+            [
+                'path' => $balanceUsers->path(),
+                'pageName' => $balanceUsers->getPageName(),
+            ]
+        );
+        $balanceData->withQueryString();
 
         /*
          * =====================================
@@ -199,6 +215,9 @@ if ($log->punch_out_time) {
 
         if ($request->filled('balance_user_ids') && is_array($request->balance_user_ids)) {
             $balanceUsersQuery->whereIn('id', $request->balance_user_ids);
+        }
+        if ($request->filled('balance_name')) {
+            $balanceUsersQuery->where('name', 'like', '%' . $request->balance_name . '%');
         }
 
         $users = $balanceUsersQuery->orderBy('name')->get();
