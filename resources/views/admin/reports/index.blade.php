@@ -153,6 +153,10 @@
                                     </select>
                                 </div>
                                 <div>
+                                    <label for="balance_name" class="block font-medium text-sm text-gray-700">اسم الموظف</label>
+                                    <input type="text" name="balance_name" id="balance_name" value="{{ request('balance_name') }}" class="block mt-1 w-full rounded-md shadow-sm border-gray-300">
+                                </div>
+                                <div>
                                     <label for="balance_user_ids" class="block font-medium text-sm text-gray-700">الموظف</label>
                                     <select name="balance_user_ids[]" id="balance_user_ids" multiple class="block mt-1 w-full rounded-md shadow-sm border-gray-300">
                                         @foreach($users as $user)
@@ -217,6 +221,9 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <div class="mt-4">
+                            {{ $balanceData->links() }}
+                        </div>
                     </div>
                 </div>
             </div>
