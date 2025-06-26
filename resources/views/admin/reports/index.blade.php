@@ -169,7 +169,14 @@
                     </div>
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg">
-                    <div class="p-6 bg-white border-b border-gray-200 overflow-x-auto">
+                    <div class="p-6 bg-white border-b border-gray-200">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">نتائج التقرير</h3>
+                            @if(request()->has('balance_department_id') || request()->has('balance_user_ids'))
+                                <a href="{{ route('admin.reports.export.balances', request()->query()) }}" class="btn-secondary">تصدير النتائج الحالية</a>
+                            @endif
+                        </div>
+                        <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>

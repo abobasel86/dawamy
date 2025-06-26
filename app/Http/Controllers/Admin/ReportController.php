@@ -185,4 +185,76 @@ if ($log->punch_out_time) {
 
         return new StreamedResponse($callback, 200, $headers);
     }
+
+    /**
+     * تصدير تقرير أرصدة الإجازات المفلترة إلى ملف CSV.
+     */
+    public function exportBalances(Request $request)
+    {
+        $balanceUsersQuery = User::query();
+
+        if ($request->filled('balance_department_id')) {
+            $balanceUsersQuery->where('department_id', $request->balance_department_id);
+        }
+
+        if ($request->filled('balance_user_ids') && is_array($request->balance_user_ids)) {
+            $balanceUsersQuery->whereIn('id', $request->balance_user_ids);
+        }
+
+        $users = $balanceUsersQuery->orderBy('name')->get();
+        $leaveTypes = LeaveType::where('show_in_balance', true)->get();
+
+        $fileName = 'balances_report_' . now()->format('Y_m_d_His') . '.csv';
+
+        $headers = [
+            'Content-type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$fileName\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0'
+        ];
+
+        $callback = function () use ($users, $leaveTypes) {
+            $file = fopen('php://output', 'w');
+
+            // لدعم اللغة العربية في Excel
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            $header = ['اسم الموظف'];
+            foreach ($leaveTypes as $type) {
+                $header[] = $type->name . ' - الرصيد المتبقي';
+                if ($type->show_taken_in_report) {
+                    $header[] = $type->name . ' - المأخوذ هذا العام';
+                }
+            }
+            fputcsv($file, $header);
+
+            foreach ($users as $user) {
+                $row = [$user->name];
+                foreach ($leaveTypes as $type) {
+                    $taken = LeaveRequest::where('user_id', $user->id)
+                        ->where('leave_type_id', $type->id)
+                        ->where('status', 'approved')
+                        ->whereYear('start_date', date('Y'))
+                        ->get()
+                        ->sum(function ($request) use ($type) {
+                            if ($type->unit === 'days') {
+                                return Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
+                            }
+                            return ($request->start_time && $request->end_time) ? (strtotime($request->end_time) - strtotime($request->start_time)) / 3600 : 0;
+                        });
+
+                    $row[] = $user->getLeaveBalance($type);
+                    if ($type->show_taken_in_report) {
+                        $row[] = $taken;
+                    }
+                }
+                fputcsv($file, $row);
+            }
+
+            fclose($file);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
+    }
 }
