@@ -14,15 +14,18 @@
             <div class="border-b mb-6">
                 <nav class="flex space-x-4 rtl:space-x-reverse">
                     <a href="{{ route('admin.reports.index', ['tab' => 'attendance']) }}"
-                       class="px-4 py-2 {{ $activeTab === 'attendance' ? 'border-b-2 border-indigo-500 text-indigo-600 font-bold' : '' }}">
+                       class="px-4 py-2 font-semibold {{ $activeTab === 'attendance' ? 'border-b-2' : '' }}"
+                       style="color: {{ $activeTab === 'attendance' ? '#caa453' : '#156b68' }}">
                        تقرير الحضور والانصراف
                     </a>
                     <a href="{{ route('admin.reports.index', ['tab' => 'balances']) }}"
-                       class="px-4 py-2 {{ $activeTab === 'balances' ? 'border-b-2 border-indigo-500 text-indigo-600 font-bold' : '' }}">
+                       class="px-4 py-2 font-semibold {{ $activeTab === 'balances' ? 'border-b-2' : '' }}"
+                       style="color: {{ $activeTab === 'balances' ? '#caa453' : '#156b68' }}">
                        أرصدة الإجازات
                     </a>
                     <a href="{{ route('admin.reports.index', ['tab' => 'employees']) }}"
-                       class="px-4 py-2 {{ $activeTab === 'employees' ? 'border-b-2 border-indigo-500 text-indigo-600 font-bold' : '' }}">
+                       class="px-4 py-2 font-semibold {{ $activeTab === 'employees' ? 'border-b-2' : '' }}"
+                       style="color: {{ $activeTab === 'employees' ? '#caa453' : '#156b68' }}">
                        الموظفين
                     </a>
                 </nav>
