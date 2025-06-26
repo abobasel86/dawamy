@@ -47,9 +47,13 @@
                             {{ __('إدارة المواقع') }}
                         </x-nav-link>
                         
-                        <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.*')" class="nav-link-custom">
-                            {{ __('التقارير') }}
+                        <x-nav-link :href="route('admin.balances.index')" :active="request()->routeIs('admin.balances.index')" class="nav-link-custom">
+                            {{ __('تقرير الأرصدة') }}
                         </x-nav-link>
+
+                        <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.*')" class="nav-link-custom">
+                            {{ __('تصدير التقارير') }}
+                        </x-nav-link> 
                     @endrole
                 </div>
             </div>
@@ -127,7 +131,8 @@
                 <x-responsive-nav-link :href="route('admin.leave-types.index')" :active="request()->routeIs('admin.leave-types.*')">أنواع الإجازات</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.document-types.index')" :active="request()->routeIs('admin.document-types.*')">أنواع المستندات</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.locations.index')" :active="request()->routeIs('admin.locations.*')">إدارة المواقع</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.*')">التقارير</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.balances.index')" :active="request()->routeIs('admin.balances.index')">تقرير الأرصدة</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.*')">تصدير التقارير</x-responsive-nav-link>
             @endrole
         </div>
 

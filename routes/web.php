@@ -69,8 +69,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export-attendance', [ReportController::class, 'exportAttendance'])->name('reports.export.attendance');
-    Route::get('reports/export-balances', [ReportController::class, 'exportBalances'])->name('reports.export.balances');
-    Route::get('reports/export-employees', [ReportController::class, 'exportEmployees'])->name('reports.export.employees');
     Route::get('balances', [BalanceController::class, 'index'])->name('balances.index');
 });
 

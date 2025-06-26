@@ -5,13 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\AttendanceLog;
-use App\Models\User;
-use App\Models\Department;
-use App\Models\Location;
-use App\Models\LeaveType;
-use App\Models\LeaveRequest;
-use Carbon\Carbon;
-use Illuminate\Pagination\LengthAwarePaginator;
+use App\Models\User; // <-- إضافة موديل المستخدم لجلب قائمة الموظفين
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
@@ -21,113 +15,33 @@ class ReportController extends Controller
      */
     public function index(Request $request)
     {
-        // قوائم المساعدة للفلاتر
+        // 1. جلب قائمة الموظفين لعرضها في الفلتر
         $users = User::orderBy('name')->get();
-        $departments = Department::orderBy('name')->get();
-        $locations = Location::orderBy('name')->get();
 
-        /*
-         * =====================================
-         *  تقارير الحضور والانصراف
-         * =====================================
-         */
-        $attendanceQuery = AttendanceLog::with('user')->latest('punch_in_time');
+        // 2. بناء استعلام الحضور والانصراف
+        $query = AttendanceLog::with('user')->latest('punch_in_time');
 
+        // 3. تطبيق الفلاتر بناءً على الطلب (request)
         if ($request->filled('start_date')) {
-            $attendanceQuery->whereDate('punch_in_time', '>=', $request->start_date);
+            $query->whereDate('punch_in_time', '>=', $request->start_date);
         }
+
         if ($request->filled('end_date')) {
-            $attendanceQuery->whereDate('punch_in_time', '<=', $request->end_date);
+            $query->whereDate('punch_in_time', '<=', $request->end_date);
         }
+
         if ($request->filled('user_ids') && is_array($request->user_ids)) {
-            $attendanceQuery->whereIn('user_id', $request->user_ids);
+            $query->whereIn('user_id', $request->user_ids);
         }
 
-        $logs = $attendanceQuery->paginate(20, ['*'], 'attendance_page')->withQueryString();
+        // 4. جلب النتائج مع الترقيم (Pagination)
+        // withQueryString() تضمن بقاء الفلاتر عند التنقل بين الصفحات
+        $logs = $query->paginate(20)->withQueryString();
 
-        /*
-         * =====================================
-         *  أرصدة الإجازات
-         * =====================================
-         */
-        $balanceUsersQuery = User::query();
-        if ($request->filled('balance_department_id')) {
-            $balanceUsersQuery->where('department_id', $request->balance_department_id);
-        }
-        if ($request->filled('balance_user_ids') && is_array($request->balance_user_ids)) {
-            $balanceUsersQuery->whereIn('id', $request->balance_user_ids);
-        }
-        if ($request->filled('balance_name')) {
-            $balanceUsersQuery->where('name', 'like', '%' . $request->balance_name . '%');
-        }
-        $balanceUsers = $balanceUsersQuery->orderBy('name')->paginate(20, ['*'], 'balance_page')->withQueryString();
-        $leaveTypes = LeaveType::where('show_in_balance', true)->get();
-        $balanceCollection = collect();
-        foreach ($balanceUsers as $user) {
-            $userBalances = [];
-            foreach ($leaveTypes as $leaveType) {
-                $taken = LeaveRequest::where('user_id', $user->id)
-                    ->where('leave_type_id', $leaveType->id)
-                    ->where('status', 'approved')
-                    ->whereYear('start_date', date('Y'))
-                    ->get()
-                    ->sum(function ($request) use ($leaveType) {
-                        if ($leaveType->unit === 'days') {
-                            return Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
-                        }
-                        return ($request->start_time && $request->end_time) ? (strtotime($request->end_time) - strtotime($request->start_time)) / 3600 : 0;
-                    });
-
-                $userBalances[$leaveType->id] = [
-                    'balance' => $user->getLeaveBalance($leaveType),
-                    'unit' => $leaveType->unit,
-                    'taken' => $taken,
-                ];
-            }
-
-            $balanceCollection->push([
-                'name' => $user->name,
-                'balances' => $userBalances,
-            ]);
-        }
-
-        $balanceData = new LengthAwarePaginator(
-            $balanceCollection,
-            $balanceUsers->total(),
-            $balanceUsers->perPage(),
-            $balanceUsers->currentPage(),
-            [
-                'path' => $balanceUsers->path(),
-                'pageName' => $balanceUsers->getPageName(),
-            ]
-        );
-        $balanceData->withQueryString();
-
-        /*
-         * =====================================
-         *  جدول الموظفين
-         * =====================================
-         */
-        $employeeQuery = User::with(['department', 'location'])->orderBy('name');
-        if ($request->filled('emp_name')) {
-            $employeeQuery->where('name', 'like', '%' . $request->emp_name . '%');
-        }
-        if ($request->filled('emp_department_id')) {
-            $employeeQuery->where('department_id', $request->emp_department_id);
-        }
-        if ($request->filled('emp_location_id')) {
-            $employeeQuery->where('location_id', $request->emp_location_id);
-        }
-        $employees = $employeeQuery->paginate(20, ['*'], 'employee_page')->withQueryString();
-
+        // 5. إرسال البيانات إلى الواجهة
         return view('admin.reports.index', [
             'users' => $users,
-            'departments' => $departments,
-            'locations' => $locations,
             'logs' => $logs,
-            'leaveTypes' => $leaveTypes,
-            'balanceData' => $balanceData,
-            'employees' => $employees,
         ]);
     }
 
@@ -196,135 +110,6 @@ if ($log->punch_out_time) {
                     (string) $duration,
                 ]);
             }
-            fclose($file);
-        };
-
-        return new StreamedResponse($callback, 200, $headers);
-    }
-
-    /**
-     * تصدير تقرير أرصدة الإجازات المفلترة إلى ملف CSV.
-     */
-    public function exportBalances(Request $request)
-    {
-        $balanceUsersQuery = User::query();
-
-        if ($request->filled('balance_department_id')) {
-            $balanceUsersQuery->where('department_id', $request->balance_department_id);
-        }
-
-        if ($request->filled('balance_user_ids') && is_array($request->balance_user_ids)) {
-            $balanceUsersQuery->whereIn('id', $request->balance_user_ids);
-        }
-        if ($request->filled('balance_name')) {
-            $balanceUsersQuery->where('name', 'like', '%' . $request->balance_name . '%');
-        }
-
-        $users = $balanceUsersQuery->orderBy('name')->get();
-        $leaveTypes = LeaveType::where('show_in_balance', true)->get();
-
-        $fileName = 'balances_report_' . now()->format('Y_m_d_His') . '.csv';
-
-        $headers = [
-            'Content-type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"$fileName\"",
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires'             => '0'
-        ];
-
-        $callback = function () use ($users, $leaveTypes) {
-            $file = fopen('php://output', 'w');
-
-            // لدعم اللغة العربية في Excel
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            $header = ['اسم الموظف'];
-            foreach ($leaveTypes as $type) {
-                $header[] = $type->name . ' - الرصيد المتبقي';
-                if ($type->show_taken_in_report) {
-                    $header[] = $type->name . ' - المأخوذ هذا العام';
-                }
-            }
-            fputcsv($file, $header);
-
-            foreach ($users as $user) {
-                $row = [$user->name];
-                foreach ($leaveTypes as $type) {
-                    $taken = LeaveRequest::where('user_id', $user->id)
-                        ->where('leave_type_id', $type->id)
-                        ->where('status', 'approved')
-                        ->whereYear('start_date', date('Y'))
-                        ->get()
-                        ->sum(function ($request) use ($type) {
-                            if ($type->unit === 'days') {
-                                return Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date)) + 1;
-                            }
-                            return ($request->start_time && $request->end_time) ? (strtotime($request->end_time) - strtotime($request->start_time)) / 3600 : 0;
-                        });
-
-                    $row[] = $user->getLeaveBalance($type);
-                    if ($type->show_taken_in_report) {
-                        $row[] = $taken;
-                    }
-                }
-                fputcsv($file, $row);
-            }
-
-            fclose($file);
-        };
-
-        return new StreamedResponse($callback, 200, $headers);
-    }
-
-    /**
-     * تصدير تقرير الموظفين المفلتر إلى ملف CSV.
-     */
-    public function exportEmployees(Request $request)
-    {
-        $employeeQuery = User::with(['department', 'location'])->orderBy('name');
-
-        if ($request->filled('emp_name')) {
-            $employeeQuery->where('name', 'like', '%' . $request->emp_name . '%');
-        }
-        if ($request->filled('emp_department_id')) {
-            $employeeQuery->where('department_id', $request->emp_department_id);
-        }
-        if ($request->filled('emp_location_id')) {
-            $employeeQuery->where('location_id', $request->emp_location_id);
-        }
-
-        $employees = $employeeQuery->get();
-
-        $fileName = 'employees_report_' . now()->format('Y_m_d_His') . '.csv';
-
-        $headers = [
-            'Content-type'        => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"$fileName\"",
-            'Pragma'              => 'no-cache',
-            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires'             => '0'
-        ];
-
-        $callback = function () use ($employees) {
-            $file = fopen('php://output', 'w');
-
-            // لدعم اللغة العربية في Excel
-            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
-
-            fputcsv($file, ['الاسم', 'البريد الإلكتروني', 'القسم', 'الموقع', 'تاريخ التعيين', 'تاريخ التثبيت']);
-
-            foreach ($employees as $emp) {
-                fputcsv($file, [
-                    $emp->name,
-                    $emp->email,
-                    optional($emp->department)->name,
-                    optional($emp->location)->name,
-                    optional($emp->hire_date)?->format('Y-m-d'),
-                    optional($emp->permanent_date)?->format('Y-m-d'),
-                ]);
-            }
-
             fclose($file);
         };
 
