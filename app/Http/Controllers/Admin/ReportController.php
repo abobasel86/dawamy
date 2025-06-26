@@ -257,4 +257,58 @@ if ($log->punch_out_time) {
 
         return new StreamedResponse($callback, 200, $headers);
     }
+
+    /**
+     * تصدير تقرير الموظفين المفلتر إلى ملف CSV.
+     */
+    public function exportEmployees(Request $request)
+    {
+        $employeeQuery = User::with(['department', 'location'])->orderBy('name');
+
+        if ($request->filled('emp_name')) {
+            $employeeQuery->where('name', 'like', '%' . $request->emp_name . '%');
+        }
+        if ($request->filled('emp_department_id')) {
+            $employeeQuery->where('department_id', $request->emp_department_id);
+        }
+        if ($request->filled('emp_location_id')) {
+            $employeeQuery->where('location_id', $request->emp_location_id);
+        }
+
+        $employees = $employeeQuery->get();
+
+        $fileName = 'employees_report_' . now()->format('Y_m_d_His') . '.csv';
+
+        $headers = [
+            'Content-type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"$fileName\"",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0'
+        ];
+
+        $callback = function () use ($employees) {
+            $file = fopen('php://output', 'w');
+
+            // لدعم اللغة العربية في Excel
+            fprintf($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            fputcsv($file, ['الاسم', 'البريد الإلكتروني', 'القسم', 'الموقع', 'تاريخ التعيين', 'تاريخ التثبيت']);
+
+            foreach ($employees as $emp) {
+                fputcsv($file, [
+                    $emp->name,
+                    $emp->email,
+                    optional($emp->department)->name,
+                    optional($emp->location)->name,
+                    optional($emp->hire_date)?->format('Y-m-d'),
+                    optional($emp->permanent_date)?->format('Y-m-d'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
+    }
 }
