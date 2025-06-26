@@ -9,18 +9,27 @@
         $activeTab = request('tab', 'attendance');
     @endphp
 
-    <div class="py-12" x-data="{ tab: '{{ $activeTab }}' }">
+    <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="border-b mb-6">
                 <nav class="flex space-x-4 rtl:space-x-reverse">
-                    <button type="button" @click="tab='attendance'" :class="{'border-b-2 border-indigo-500 text-indigo-600 font-bold': tab==='attendance'}" class="px-4 py-2">تقرير الحضور والانصراف</button>
-                    <button type="button" @click="tab='balances'" :class="{'border-b-2 border-indigo-500 text-indigo-600 font-bold': tab==='balances'}" class="px-4 py-2">أرصدة الإجازات</button>
-                    <button type="button" @click="tab='employees'" :class="{'border-b-2 border-indigo-500 text-indigo-600 font-bold': tab==='employees'}" class="px-4 py-2">الموظفين</button>
+                    <a href="{{ route('admin.reports.index', ['tab' => 'attendance']) }}"
+                       class="px-4 py-2 {{ $activeTab === 'attendance' ? 'border-b-2 border-indigo-500 text-indigo-600 font-bold' : '' }}">
+                       تقرير الحضور والانصراف
+                    </a>
+                    <a href="{{ route('admin.reports.index', ['tab' => 'balances']) }}"
+                       class="px-4 py-2 {{ $activeTab === 'balances' ? 'border-b-2 border-indigo-500 text-indigo-600 font-bold' : '' }}">
+                       أرصدة الإجازات
+                    </a>
+                    <a href="{{ route('admin.reports.index', ['tab' => 'employees']) }}"
+                       class="px-4 py-2 {{ $activeTab === 'employees' ? 'border-b-2 border-indigo-500 text-indigo-600 font-bold' : '' }}">
+                       الموظفين
+                    </a>
                 </nav>
             </div>
 
             <!-- Attendance Tab -->
-            <div x-show="tab==='attendance'">
+             @if ($activeTab === 'attendance')
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-white border-b border-gray-200">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">فلترة التقرير</h3>
@@ -136,7 +145,7 @@
             </div>
 
             <!-- Balances Tab -->
-            <div x-show="tab==='balances'" x-cloak>
+            @elseif ($activeTab === 'balances')
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-white border-b border-gray-200">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">فلترة التقرير</h3>
@@ -170,6 +179,13 @@
                 </div>
                 <div class="bg-white shadow-sm sm:rounded-lg">
                     <div class="p-6 bg-white border-b border-gray-200 overflow-x-auto">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-medium text-gray-900">نتائج التقرير</h3>
+                            @if(request()->has('balance_department_id') || request()->has('balance_user_ids'))
+                                <a href="{{ route('admin.reports.export.balances', request()->query()) }}" class="btn-secondary">تصدير النتائج الحالية</a>
+                            @endif
+                        </div>
+                        <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
@@ -215,7 +231,8 @@
             </div>
 
             <!-- Employees Tab -->
-            <div x-show="tab==='employees'" x-cloak>
+            @elseif ($activeTab === 'employees')
+                <div x-show="tab==='employees'" x-cloak>
                 <div class="bg-white shadow-sm sm:rounded-lg mb-6">
                     <div class="p-6 bg-white border-b border-gray-200">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">فلترة البحث</h3>
@@ -290,7 +307,9 @@
             </div>
         </div>
     </div>
+            @endif
 
+    <!-- Image Modal -->
     <div id="imageModal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden p-4" onclick="closeImageModal()">
         <div class="bg-white p-4 rounded-lg shadow-xl relative max-w-4xl w-full max-h-[90vh] overflow-auto" onclick="event.stopPropagation()">
             <button onclick="closeImageModal()" class="absolute top-0 right-0 -m-3 text-white bg-gray-800 border-2 border-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold z-10 hover:bg-red-600 transition-colors">&times;</button>
