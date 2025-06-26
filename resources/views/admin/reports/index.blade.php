@@ -138,17 +138,19 @@
      class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 hidden p-4" 
      onclick="closeImageModal()">
     
-    <div class="bg-white p-2 rounded-lg shadow-xl relative" 
-         style="width: auto; max-width: 90%; max-height: 90vh; overflow-y: auto;" 
+    <div class="bg-white p-4 rounded-lg shadow-xl relative max-w-4xl w-full max-h-[90vh] overflow-auto" 
          onclick="event.stopPropagation()">
 
         <button onclick="closeImageModal()" 
                 class="absolute top-0 right-0 -m-3 text-white bg-gray-800 border-2 border-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold z-10 hover:bg-red-600 transition-colors">
-                &times;
+            &times;
         </button>
 
-        <div class="overflow-hidden rounded-md">
-             <img id="modalImage" src="" alt="صورة الموظف" style="width: 100%; height: auto; display: block;">
+        <div class="overflow-hidden rounded-md flex justify-center items-center min-h-[300px]">
+            <img id="modalImage" 
+                 src="" 
+                 alt="صورة الموظف" 
+                 style="max-width: 100%; max-height: 80vh; object-fit: contain; display: block;">
         </div>
     </div>
 </div>

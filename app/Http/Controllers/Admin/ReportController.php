@@ -91,11 +91,13 @@ class ReportController extends Controller
 
             foreach ($logs as $log) {
                 $duration = 'N/A';
-                if ($log->punch_out_time) {
-                    $punchIn = new \DateTime($log->punch_in_time);
-                    $punchOut = new \DateTime($log->punch_out_time);
-                    $interval = $punchIn->diff($punchOut);
-                    $duration = $interval->h + round($interval->i / 60, 2);
+if ($log->punch_out_time) {
+    $punchIn = new \DateTime($log->punch_in_time);
+    $punchOut = new \DateTime($log->punch_out_time);
+    $interval = $punchIn->diff($punchOut);
+    $hours = str_pad($interval->h, 2, '0', STR_PAD_LEFT);
+    $minutes = str_pad($interval->i, 2, '0', STR_PAD_LEFT);
+    $duration = "$hours:$minutes";
                 }
                 fputcsv($file, [
                     $log->user->id,

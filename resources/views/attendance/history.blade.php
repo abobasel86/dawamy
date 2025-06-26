@@ -36,7 +36,7 @@
                                                 @php
                                                     $punchIn = \Carbon\Carbon::parse($log->punch_in_time);
                                                     $punchOut = \Carbon\Carbon::parse($log->punch_out_time);
-                                                    echo $punchIn->diff($punchOut)->format('%h ساعة و %i دقيقة');
+                                                    echo $punchIn->diff($punchOut)->format('h:i A');
                                                 @endphp
                                             @else
                                                 -
