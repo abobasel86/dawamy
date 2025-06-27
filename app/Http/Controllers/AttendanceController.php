@@ -40,22 +40,8 @@ class AttendanceController extends Controller
             return back()->with('error', 'فشل التحقق البيومتري.');
         }
         
-        $workLocation = $user->location; 
-        if (!$workLocation) {
-            return back()->with('error', 'لم يتم تحديد موقع عمل لك. يرجى مراجعة المسؤول.');
-        }
-
-        $userLat = $request->input('latitude');
-        $userLon = $request->input('longitude');
-
-        if (!$userLat || !$userLon) {
-            return back()->with('error', 'لم نتمكن من تحديد موقعك. يرجى تفعيل خدمات الموقع في متصفحك.');
-        }
-
-        $distance = $this->calculateDistance($workLocation->latitude, $workLocation->longitude, $userLat, $userLon);
-
-        if ($distance > $workLocation->radius_meters) {
-            return back()->with('error', 'أنت خارج نطاق العمل المسموح به. المسافة الحالية: ' . round($distance) . ' متر.');
+        if ($response = $this->validateGeolocation($request, $user, true)) {
+            return $response;
         }
         
         $hasOpenAttendance = AttendanceLog::where('user_id', $user->id)
@@ -67,17 +53,7 @@ class AttendanceController extends Controller
         }
 
         // --- الجزء الجديد: حفظ الصورة وبيانات الجهاز ---
-        $selfiePath = null;
-        if ($request->has('selfie_image')) {
-            $imageData = $request->input('selfie_image');
-            $imageData = str_replace('data:image/png;base64,', '', $imageData);
-            $imageData = str_replace(' ', '+', $imageData);
-            $imageName = 'punch_in_' . time() . '.png';
-            
-            // تخزين الصورة في مجلد storage/app/public/selfies/USER_ID
-            Storage::disk('public')->put('selfies/' . $user->id . '/' . $imageName, base64_decode($imageData));
-            $selfiePath = 'selfies/' . $user->id . '/' . $imageName;
-        }
+        $selfiePath = $this->storeSelfie($request, $user, 'punch_in_');
 
         $agent = new Agent();
         $agent->setUserAgent($request->header('User-Agent'));
@@ -110,22 +86,8 @@ class AttendanceController extends Controller
         }
         
         // --- الجزء الجديد: التحقق من الموقع الجغرافي عند الانصراف ---
-        $workLocation = $user->location; 
-        if (!$workLocation) {
-            return back()->with('error', 'لم يتم تحديد موقع عمل لك. يرجى مراجعة المسؤول.');
-        }
-
-        $userLat = $request->input('latitude');
-        $userLon = $request->input('longitude');
-
-        if (!$userLat || !$userLon) {
-            return back()->with('error', 'لم نتمكن من تحديد موقعك. يرجى تفعيل خدمات الموقع في متصفحك.');
-        }
-
-        $distance = $this->calculateDistance($workLocation->latitude, $workLocation->longitude, $userLat, $userLon);
-
-        if ($distance > $workLocation->radius_meters) {
-            return back()->with('error', 'أنت خارج نطاق العمل المسموح به لتسجيل الانصراف.');
+        if ($response = $this->validateGeolocation($request, $user)) {
+            return $response;
         }
         // --- نهاية الجزء الجديد ---
 
@@ -139,16 +101,7 @@ class AttendanceController extends Controller
         }
 
         // --- الجزء الجديد: حفظ الصورة وبيانات الجهاز ---
-        $selfiePath = null;
-        if ($request->has('selfie_image')) {
-            $imageData = $request->input('selfie_image');
-            $imageData = str_replace('data:image/png;base64,', '', $imageData);
-            $imageData = str_replace(' ', '+', $imageData);
-            $imageName = 'punch_out_' . time() . '.png';
-            
-            Storage::disk('public')->put('selfies/' . $user->id . '/' . $imageName, base64_decode($imageData));
-            $selfiePath = 'selfies/' . $user->id . '/' . $imageName;
-        }
+        $selfiePath = $this->storeSelfie($request, $user, 'punch_out_');
 
         $agent = new Agent();
         $agent->setUserAgent($request->header('User-Agent'));
@@ -166,6 +119,48 @@ class AttendanceController extends Controller
         ]);
 
         return redirect()->route('dashboard')->with('success', 'تم تسجيل انصرافك بنجاح. يومك سعيد!');
+    }
+
+    private function storeSelfie(Request $request, $user, string $prefix): ?string
+    {
+        if (!$request->has('selfie_image')) {
+            return null;
+        }
+
+        $imageData = $request->input('selfie_image');
+        $imageData = str_replace('data:image/png;base64,', '', $imageData);
+        $imageData = str_replace(' ', '+', $imageData);
+        $imageName = $prefix . time() . '.png';
+
+        Storage::disk('public')->put('selfies/' . $user->id . '/' . $imageName, base64_decode($imageData));
+
+        return 'selfies/' . $user->id . '/' . $imageName;
+    }
+
+    private function validateGeolocation(Request $request, $user, bool $includeDistance = false)
+    {
+        $workLocation = $user->location;
+        if (!$workLocation) {
+            return back()->with('error', 'لم يتم تحديد موقع عمل لك. يرجى مراجعة المسؤول.');
+        }
+
+        $userLat = $request->input('latitude');
+        $userLon = $request->input('longitude');
+
+        if (!$userLat || !$userLon) {
+            return back()->with('error', 'لم نتمكن من تحديد موقعك. يرجى تفعيل خدمات الموقع في متصفحك.');
+        }
+
+        $distance = $this->calculateDistance($workLocation->latitude, $workLocation->longitude, $userLat, $userLon);
+
+        if ($distance > $workLocation->radius_meters) {
+            $message = $includeDistance
+                ? 'أنت خارج نطاق العمل المسموح به. المسافة الحالية: ' . round($distance) . ' متر.'
+                : 'أنت خارج نطاق العمل المسموح به لتسجيل الانصراف.';
+            return back()->with('error', $message);
+        }
+
+        return null;
     }
 
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
