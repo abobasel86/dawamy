@@ -71,6 +71,8 @@
 
     @push('scripts')
 <script>
+    const registeredCreds = @json($credentialIds);
+
     function cameraApp() {
         return {
             showModal: false,
@@ -143,7 +145,17 @@
                     return;
                 }
 
-                navigator.credentials.get({publicKey: {challenge: new Uint8Array(), userVerification: 'preferred'}})
+                navigator.credentials.get({
+                    publicKey: {
+                        challenge: new Uint8Array(),
+                        userVerification: 'required',
+                        allowCredentials: registeredCreds.map(id => ({
+                            type: 'public-key',
+                            id: Uint8Array.from(atob(id), c => c.charCodeAt(0)),
+                            transports: ['internal']
+                        }))
+                    }
+                })
                     .then(cred => {
                         const rawId = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
                         document.getElementById('credential_id_' + this.actionType).value = rawId;

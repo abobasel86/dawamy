@@ -19,8 +19,13 @@ class AttendanceController extends Controller
             ->whereDate('punch_in_time', Carbon::today())
             ->whereNull('punch_out_time')
             ->first();
+
+        $credentialIds = $user->webauthnCredentials()
+            ->pluck('credential_id');
+
         return view('dashboard', [
             'hasPunchedIn' => $latestAttendance ? true : false,
+            'credentialIds' => $credentialIds,
         ]);
     }
 
@@ -184,8 +189,10 @@ class AttendanceController extends Controller
             return false;
         }
 
-        return $request->user()->webauthnCredentials()
-            ->where('credential_id', $credId)
-            ->exists();
+        $registered = $request->user()->webauthnCredentials()
+            ->pluck('credential_id')
+            ->toArray();
+
+        return in_array($credId, $registered, true);
     }
 }
