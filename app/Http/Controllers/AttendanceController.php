@@ -192,10 +192,23 @@ class AttendanceController extends Controller
             return false;
         }
 
-        $registered = $request->user()->webauthnCredentials()
-            ->pluck('credential_id')
-            ->toArray();
+        $credential = $request->user()->webauthnCredentials()
+            ->where('credential_id', $credId)
+            ->first();
 
-        return in_array($credId, $registered, true);
+        if (!$credential) {
+            return false;
+        }
+
+        try {
+            $assertion = \Webauthn::validateAssertion($request);
+            if (method_exists($assertion, 'getCounter')) {
+                $credential->counter = $assertion->getCounter();
+                $credential->save();
+            }
+            return true;
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 }
