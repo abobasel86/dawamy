@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\AttendanceLog;
 use App\Models\WebAuthnCredential;
 use Carbon\Carbon;
+use Jenssegers\Agent\Agent;
 
 class AttendanceController extends Controller
 {
@@ -78,11 +79,19 @@ class AttendanceController extends Controller
             $selfiePath = 'selfies/' . $user->id . '/' . $imageName;
         }
 
+        $agent = new Agent();
+        $agent->setUserAgent($request->header('User-Agent'));
+
+        $device = $agent->device();
+        $platform = $agent->platform();
+
         AttendanceLog::create([
             'user_id' => $user->id,
             'punch_in_time' => now(),
             'punch_in_ip_address' => $request->ip(),
             'punch_in_user_agent' => $request->header('User-Agent'),
+            'punch_in_device' => $device,
+            'punch_in_platform' => $platform,
             'punch_in_selfie_path' => $selfiePath,
         ]);
 
@@ -141,10 +150,18 @@ class AttendanceController extends Controller
             $selfiePath = 'selfies/' . $user->id . '/' . $imageName;
         }
 
+        $agent = new Agent();
+        $agent->setUserAgent($request->header('User-Agent'));
+
+        $device = $agent->device();
+        $platform = $agent->platform();
+
         $attendanceLog->update([
             'punch_out_time' => now(),
             'punch_out_ip_address' => $request->ip(),
             'punch_out_user_agent' => $request->header('User-Agent'),
+            'punch_out_device' => $device,
+            'punch_out_platform' => $platform,
             'punch_out_selfie_path' => $selfiePath,
         ]);
 

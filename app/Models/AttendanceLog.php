@@ -16,10 +16,14 @@ class AttendanceLog extends Model
         'punch_in_ip_address',
         'punch_in_selfie_path',
         'punch_in_user_agent',
+        'punch_in_device',
+        'punch_in_platform',
         'punch_out_time',
         'punch_out_ip_address',
         'punch_out_selfie_path',
         'punch_out_user_agent',
+        'punch_out_device',
+        'punch_out_platform',
         'notes',
     ];
 
