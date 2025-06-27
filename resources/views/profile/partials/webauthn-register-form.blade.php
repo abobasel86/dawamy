@@ -1,4 +1,39 @@
-<section class="space-y-6" x-data="{register() { if(!window.PublicKeyCredential) { alert('جهازك لا يدعم التحقق البيومتري'); return; } const challenge = Uint8Array.from(atob('{{ $registerChallenge }}'), c => c.charCodeAt(0)); navigator.credentials.create({publicKey:{challenge:challenge, authenticatorSelection:{authenticatorAttachment:'platform', userVerification:'required'}}}).then(c=>{document.getElementById('webauthn_cred').value=btoa(String.fromCharCode(...new Uint8Array(c.rawId))); document.getElementById('webauthn_key').value=''; document.getElementById('webauthnForm').submit();}).catch(()=>alert('فشل تسجيل الجهاز')); }}">
+<section class="space-y-6"
+    x-data="{
+        register() {
+            if (!window.PublicKeyCredential) {
+                alert('جهازك لا يدعم التحقق البيومتري');
+                return;
+            }
+
+            const challenge = Uint8Array.from(atob('{{ $registerChallenge }}'), c => c.charCodeAt(0));
+
+            navigator.credentials.create({
+                publicKey: {
+                    challenge: challenge,
+                    authenticatorSelection: {
+                        authenticatorAttachment: 'platform',
+                        userVerification: 'required'
+                    }
+                }
+            })
+                .then(c => {
+                    document.getElementById('webauthn_cred').value = btoa(
+                        String.fromCharCode(...new Uint8Array(c.rawId))
+                    );
+
+                    const pk = c.response.getPublicKey();
+                    if (pk) {
+                        document.getElementById('webauthn_key').value = btoa(
+                            String.fromCharCode(...new Uint8Array(pk))
+                        );
+                    }
+
+                    document.getElementById('webauthnForm').submit();
+                })
+                .catch(() => alert('فشل تسجيل الجهاز'));
+        }
+    }">
     <header>
         <h2 class="text-lg font-medium text-gray-900">تسجيل جهاز بيومتري</h2>
         <p class="mt-1 text-sm text-gray-600">سجّل جهازك البيومتري لاستخدامه في تسجيل الحضور.</p>

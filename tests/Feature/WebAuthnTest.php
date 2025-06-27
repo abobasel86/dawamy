@@ -81,3 +81,17 @@ it('rejects punching in without credential', function () {
     $response->assertSessionHas('error');
     expect(AttendanceLog::where('user_id', $user->id)->exists())->toBeFalse();
 });
+
+it('stores public key when registering credential', function () {
+    $user = User::factory()->create();
+
+    $response = $this->actingAs($user)->post('/webauthn/register', [
+        'name' => 'finger',
+        'credential_id' => 'cred-1',
+        'public_key' => base64_encode('pk-data'),
+    ]);
+
+    $response->assertOk();
+    $cred = WebAuthnCredential::first();
+    expect($cred->public_key)->toBe(base64_encode('pk-data'));
+});
