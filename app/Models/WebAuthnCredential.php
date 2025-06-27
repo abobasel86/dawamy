@@ -10,6 +10,13 @@ class WebAuthnCredential extends Model
 {
     use HasFactory;
 
+    /**
+     * The table associated with the model.
+     * This overrides Laravel's default pluralisation which would
+     * otherwise expect `web_authn_credentials`.
+     */
+    protected $table = 'webauthn_credentials';
+
     protected $fillable = [
         'user_id',
         'name',
