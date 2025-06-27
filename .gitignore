@@ -17,6 +17,7 @@
 /public/build
 /public/hot
 /public/storage
+/public/test_ssl.php
 /storage/*.key
 /storage/pail
 /vendor
