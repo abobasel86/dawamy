@@ -56,3 +56,28 @@ it('rejects punching in with invalid credential', function () {
     $response->assertSessionHas('error');
     expect(AttendanceLog::where('user_id', $user->id)->exists())->toBeFalse();
 });
+
+it('rejects punching in without credential', function () {
+    $location = Location::create([
+        'name' => 'Office',
+        'latitude' => 0,
+        'longitude' => 0,
+        'radius_meters' => 100,
+    ]);
+
+    $user = User::factory()->create(['location_id' => $location->id]);
+    WebAuthnCredential::create([
+        'user_id' => $user->id,
+        'name' => 'finger',
+        'credential_id' => 'valid-cred',
+        'public_key' => 'pk',
+    ]);
+
+    $response = $this->actingAs($user)->post('/punch-in', [
+        'latitude' => 0,
+        'longitude' => 0,
+    ]);
+
+    $response->assertSessionHas('error');
+    expect(AttendanceLog::where('user_id', $user->id)->exists())->toBeFalse();
+});
