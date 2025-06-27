@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\AttendanceLog;
+use App\Models\WebAuthnCredential;
 use Carbon\Carbon;
 
 class AttendanceController extends Controller
@@ -33,6 +34,10 @@ class AttendanceController extends Controller
     public function punchIn(Request $request)
     {
         $user = Auth::user();
+
+        if (!$this->verifyWebAuthn($request)) {
+            return back()->with('error', 'فشل التحقق البيومتري.');
+        }
         
         $workLocation = $user->location; 
         if (!$workLocation) {
@@ -90,6 +95,10 @@ class AttendanceController extends Controller
     public function punchOut(Request $request)
     {
         $user = Auth::user();
+
+        if (!$this->verifyWebAuthn($request)) {
+            return back()->with('error', 'فشل التحقق البيومتري.');
+        }
         
         // --- الجزء الجديد: التحقق من الموقع الجغرافي عند الانصراف ---
         $workLocation = $user->location; 
@@ -154,5 +163,17 @@ class AttendanceController extends Controller
         $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
             cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
         return $angle * $earthRadius;
+    }
+
+    private function verifyWebAuthn(Request $request): bool
+    {
+        $credId = $request->input('credential_id');
+        if (!$credId) {
+            return false;
+        }
+
+        return $request->user()->webauthnCredentials()
+            ->where('credential_id', $credId)
+            ->exists();
     }
 }
