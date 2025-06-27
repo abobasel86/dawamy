@@ -154,7 +154,8 @@
                         allowCredentials: registeredCreds.map(id => ({
                             type: 'public-key',
                             id: Uint8Array.from(atob(id), c => c.charCodeAt(0)),
-                            transports: ['internal']
+                            transports: ['internal'],
+                            authenticatorAttachment: 'platform'
                         }))
                     }
                 })
