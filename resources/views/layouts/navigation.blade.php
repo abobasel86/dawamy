@@ -51,6 +51,17 @@
                             {{ __('التقارير') }}
                         </x-nav-link>
                     @endrole
+                    @role('HR')
+                        <x-nav-link :href="route('manager.team.index')" :active="request()->routeIs('manager.team.index')" class="nav-link-custom">
+                            {{ __('فريق العمل') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')" class="nav-link-custom">
+                            {{ __('إدارة المستخدمين') }}
+                        </x-nav-link>
+                        <x-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.*')" class="nav-link-custom">
+                            {{ __('التقارير') }}
+                        </x-nav-link>
+                    @endrole
                 </div>
             </div>
 
@@ -127,6 +138,10 @@
                 <x-responsive-nav-link :href="route('admin.leave-types.index')" :active="request()->routeIs('admin.leave-types.*')">أنواع الإجازات</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.document-types.index')" :active="request()->routeIs('admin.document-types.*')">أنواع المستندات</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.locations.index')" :active="request()->routeIs('admin.locations.*')">إدارة المواقع</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.*')">التقارير</x-responsive-nav-link>
+            @endrole
+            @role('HR')
+                <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">إدارة المستخدمين</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.reports.index')" :active="request()->routeIs('admin.reports.*')">التقارير</x-responsive-nav-link>
             @endrole
         </div>

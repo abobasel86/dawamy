@@ -53,20 +53,19 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Manager & Senior Roles Routes for Approvals
-Route::middleware(['auth', 'role:manager|admin|secretary_general|assistant_secretary_general'])->prefix('manager')->name('manager.')->group(function () {
+Route::middleware(['auth', 'role:manager|admin|secretary_general|assistant_secretary_general|HR'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::post('/approvals/{approval}', [ApprovalController::class, 'update'])->name('approvals.update');
 	Route::get('/team', [TeamController::class, 'index'])->name('team.index');
 });
 
 // Admin Only Routes
-Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin|HR'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', UserController::class)->except(['show']);
     Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
     Route::resource('locations', LocationController::class)->except(['show']);
     Route::resource('document-types', DocumentTypeController::class)->except(['show']);
     Route::resource('departments', DepartmentController::class)->except(['show']);
-    
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export-attendance', [ReportController::class, 'exportAttendance'])->name('reports.export.attendance');
     Route::get('reports/export-balances', [ReportController::class, 'exportBalances'])->name('reports.export.balances');
@@ -74,6 +73,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('balances', [BalanceController::class, 'index'])->name('balances.index');
 });
 
+// HR Only Routes
+Route::middleware(['auth', 'role:HR'])->prefix('HR')->name('HR.')->group(function () {
+    Route::resource('users', UserController::class)->except(['show']);
+    Route::get('/team', [TeamController::class, 'index'])->name('team.index');
+    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('reports/export-attendance', [ReportController::class, 'exportAttendance'])->name('reports.export.attendance');
+    Route::get('reports/export-balances', [ReportController::class, 'exportBalances'])->name('reports.export.balances');
+    Route::get('reports/export-employees', [ReportController::class, 'exportEmployees'])->name('reports.export.employees');
+    Route::get('balances', [BalanceController::class, 'index'])->name('balances.index');
+});
 if (app()->environment('local')) {
     Route::get('/test-pure-openssl', function () {
         try {

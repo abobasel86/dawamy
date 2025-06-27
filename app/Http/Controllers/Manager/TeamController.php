@@ -17,7 +17,7 @@ class TeamController extends Controller
         $manager = Auth::user();
         $query = User::query();
 
-        if ($manager->hasRole(['secretary_general', 'admin'])) {
+        if ($manager->hasRole(['secretary_general', 'admin', 'HR'])) {
             // الأمين العام والأدمن يرون كل الموظفين
         } elseif ($manager->hasRole('assistant_secretary_general')) {
             // الأمين العام المساعد يرى موظفي الإدارات التي تتطلب موافقته
@@ -33,7 +33,7 @@ class TeamController extends Controller
         }
 
         // تطبيق الفلاتر (للأمين العام والأدمن)
-        if ($manager->hasRole(['secretary_general', 'admin'])) {
+        if ($manager->hasRole(['secretary_general', 'admin', 'HR'])) {
             if ($request->filled('employee_name')) {
                 $query->where('name', 'like', '%' . $request->employee_name . '%');
             }
