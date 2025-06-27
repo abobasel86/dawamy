@@ -4,6 +4,8 @@ use App\Models\User;
 use App\Models\Location;
 use App\Models\WebAuthnCredential;
 use App\Models\AttendanceLog;
+use Mockery;
+use Webauthn;
 
 it('allows punching in with valid credential', function () {
     $location = Location::create([
@@ -21,6 +23,10 @@ it('allows punching in with valid credential', function () {
         'public_key' => 'pk',
     ]);
 
+    $assertion = Mockery::mock();
+    $assertion->shouldReceive('getCounter')->andReturn(5);
+    Webauthn::shouldReceive('validateAssertion')->once()->andReturn($assertion);
+
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
         'longitude' => 0,
@@ -29,6 +35,7 @@ it('allows punching in with valid credential', function () {
 
     $response->assertRedirect('/dashboard');
     expect(AttendanceLog::where('user_id', $user->id)->exists())->toBeTrue();
+    expect(WebAuthnCredential::find($cred->id)->counter)->toBe(5);
 });
 
 it('rejects punching in with invalid credential', function () {
@@ -46,6 +53,8 @@ it('rejects punching in with invalid credential', function () {
         'credential_id' => 'valid-cred',
         'public_key' => 'pk',
     ]);
+
+    Webauthn::shouldReceive('validateAssertion')->once()->andThrow(new Exception('invalid'));
 
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
@@ -72,6 +81,8 @@ it('rejects punching in without credential', function () {
         'credential_id' => 'valid-cred',
         'public_key' => 'pk',
     ]);
+
+    Webauthn::shouldReceive('validateAssertion')->never();
 
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
