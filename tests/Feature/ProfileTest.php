@@ -10,6 +10,7 @@ test('profile page is displayed', function () {
         ->get('/profile');
 
     $response->assertOk();
+    expect($response->viewData('registerChallenge'))->not->toBeNull();
 });
 
 test('profile information can be updated', function () {
