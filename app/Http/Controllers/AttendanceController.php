@@ -23,9 +23,12 @@ class AttendanceController extends Controller
         $credentialIds = $user->webauthnCredentials()
             ->pluck('credential_id');
 
+        $challenge = base64_encode(random_bytes(32));
+
         return view('dashboard', [
             'hasPunchedIn' => $latestAttendance ? true : false,
             'credentialIds' => $credentialIds,
+            'challenge' => $challenge,
         ]);
     }
 

@@ -72,6 +72,8 @@
     @push('scripts')
 <script>
     const registeredCreds = @json($credentialIds);
+    const loginChallengeBase64 = @json($challenge);
+    const loginChallenge = Uint8Array.from(atob(loginChallengeBase64), c => c.charCodeAt(0));
 
     function cameraApp() {
         return {
@@ -147,7 +149,7 @@
 
                 navigator.credentials.get({
                     publicKey: {
-                        challenge: new Uint8Array(),
+                        challenge: loginChallenge,
                         userVerification: 'required',
                         allowCredentials: registeredCreds.map(id => ({
                             type: 'public-key',
