@@ -42,11 +42,11 @@
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if($log->punch_out_time)
                                                 @php
-                                                    $punchIn = \Carbon\Carbon::parse($log->punch_in_time);
-                                                    $punchOut = \Carbon\Carbon::parse($log->punch_out_time);
-                                                    $diff = $punchIn->diff($punchOut);
-                                                    printf('%02d:%02d', $diff->h, $diff->i);
-                                                @endphp
+            $punchIn = \Carbon\Carbon::parse($log->punch_in_time);
+            $punchOut = \Carbon\Carbon::parse($log->punch_out_time);
+            $diff = $punchIn->diff($punchOut);
+            printf('%02d:%02d', $diff->h, $diff->i);
+        @endphp
                                             @else
                                                 -
                                             @endif
