@@ -46,6 +46,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push_subscriptions.store');
     Route::post('/push-subscriptions/delete', [PushSubscriptionController::class, 'destroy'])->name('push_subscriptions.destroy');
 
+    Route::post('/webauthn/register', [\App\Http\Controllers\WebAuthnController::class, 'registerCredential'])->name('webauthn.register');
+    Route::post('/webauthn/verify', [\App\Http\Controllers\WebAuthnController::class, 'verify'])->name('webauthn.verify');
+
     
     // Employee Leave Requests Page
     Route::get('/leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
