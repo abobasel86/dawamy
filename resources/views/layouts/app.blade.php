@@ -210,5 +210,7 @@
     </script>
     
     @stack('scripts')
+    @webauthnScripts
+
 </body>
 </html>

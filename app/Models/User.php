@@ -2,6 +2,10 @@
 
 namespace App\Models;
 
+// 1. إضافة هذه الأسطر لاستيراد الأدوات اللازمة من المكتبة
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
+use Laragear\WebAuthn\WebAuthnAuthentication;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -12,11 +16,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Carbon\Carbon;
 use NotificationChannels\WebPush\HasPushSubscriptions;
 
-
-class User extends Authenticatable
+// 2. تعديل تعريف الكلاس ليستخدم الواجهة (Contract)
+class User extends Authenticatable implements WebAuthnAuthenticatable
 {
+    // 3. استخدام الـ Trait الذي يضيف كل الدوال اللازمة تلقائيًا
+    use WebAuthnAuthentication;
+
     use HasFactory, Notifiable, HasRoles, HasPushSubscriptions;
 
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'email',
@@ -31,18 +43,35 @@ class User extends Authenticatable
         'is_active',
     ];
 
-    protected $hidden = ['password', 'remember_token'];
-    
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'hire_date' => 'date',
-        'probation_end_date' => 'date',
-        'permanent_date' => 'date',
-        'is_active' => 'boolean',
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
+    
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'hire_date' => 'date',
+            'probation_end_date' => 'date',
+            'permanent_date' => 'date',
+            'is_active' => 'boolean',
+        ];
+    }
 
-    // --- Relationships ---
+    // --- بقية الدوال والعلاقات في الموديل تبقى كما هي ---
+    
     public function manager(): BelongsTo { return $this->belongsTo(User::class, 'manager_id'); }
     public function team(): HasMany { return $this->hasMany(User::class, 'manager_id'); }
     public function location(): BelongsTo { return $this->belongsTo(Location::class); }
@@ -56,7 +85,6 @@ class User extends Authenticatable
                     ->withTimestamps();
     }
     
-    // --- New Helper Methods ---
     public function getManagerAttribute()
     {
         return $this->directManager ?? $this->department?->manager;
@@ -74,28 +102,18 @@ class User extends Authenticatable
 
     public function getLeaveBalance(LeaveType $leaveType): float
     {
-        // إذا كانت الإجازة سنوية، نطبق عليها سياسات خاصة
         if ($leaveType->is_annual) {
             if ($this->employment_status == 'probation') {
                 return $this->_getProbationAnnualBalance($leaveType);
             }
-            // للموظف الدائم أو العقد
             return $this->_getCumulativeAnnualBalance($leaveType);
         }
-
-        // للإجازات الأخرى غير السنوية، نطبق عليها السياسة القياسية
         return $this->_getStandardLeaveBalance($leaveType);
     }
-	
-	
-    // ================== الدوال المساعدة الخاصة (للتنظيم) ==================
-
-    /**
-     * حساب رصيد الإجازة السنوية للموظف تحت الاختبار
-     */
+    
     private function _getProbationAnnualBalance(LeaveType $leaveType): float
     {
-        $probationEntitlement = 3; // رصيد فترة الاختبار
+        $probationEntitlement = 3; 
 
         $takenDuringProbation = $this->leaveRequests()
             ->where('leave_type_id', $leaveType->id)
@@ -103,7 +121,7 @@ class User extends Authenticatable
             ->where(function ($query) {
                 if ($this->hire_date && $this->probation_end_date) {
                     $query->where('start_date', '>=', $this->hire_date)
-                          ->where('end_date', '<=', $this->probation_end_date);
+                            ->where('end_date', '<=', $this->probation_end_date);
                 }
             })->get()->sum(function ($r) {
                 return Carbon::parse($r->start_date)->diffInDays(Carbon::parse($r->end_date)) + 1;
@@ -112,14 +130,9 @@ class User extends Authenticatable
         return max(0, $probationEntitlement - $takenDuringProbation);
     }
 
-    /**
-     * حساب الرصيد التراكمي للإجازة السنوية (للموظف الدائم أو العقد)
-     */
     private function _getCumulativeAnnualBalance(LeaveType $leaveType): float
     {
         $openingBalancePivot = $this->leaveBalances()->where('leave_type_id', $leaveType->id)->first();
-
-        // إذا لم يقم الأدمن بتحديد رصيد افتتاحي، فالرصيد هو صفر
         if (!$openingBalancePivot) {
             return 0;
         }
@@ -127,9 +140,8 @@ class User extends Authenticatable
         $customOpeningBalance = $openingBalancePivot->pivot->balance;
         $balanceSetYear = Carbon::parse($openingBalancePivot->pivot->updated_at)->year;
         $currentBalance = $customOpeningBalance;
-        $annualEntitlement = 30; // الرصيد السنوي
+        $annualEntitlement = 30; 
 
-        // جلب كل الإجازات المأخوذة مرة واحدة وتجميعها حسب السنة لتحسين الأداء
         $takenLeavesByYear = $this->leaveRequests()
             ->where('leave_type_id', $leaveType->id)
             ->where('status', 'approved')
@@ -141,22 +153,16 @@ class User extends Authenticatable
                 return $requests->sum(fn($r) => Carbon::parse($r->start_date)->diffInDays(Carbon::parse($r->end_date)) + 1);
             });
 
-        // خصم الإجازات من سنة الرصيد الافتتاحي
         $currentBalance -= $takenLeavesByYear->get($balanceSetYear, 0);
 
-        // إضافة الرصيد السنوي وخصم المأخوذ لكل سنة تالية
         for ($year = $balanceSetYear + 1; $year <= today()->year; $year++) {
             $currentBalance += $annualEntitlement;
             $currentBalance -= $takenLeavesByYear->get($year, 0);
         }
 
-        // التأكد من أن الرصيد لا يتجاوز 90 يوماً
         return min($currentBalance, 90);
     }
 
-    /**
-     * حساب الرصيد للإجازات العادية (غير السنوية)
-     */
     private function _getStandardLeaveBalance(LeaveType $leaveType): float
     {
         $otherLeaveBalancePivot = $this->leaveBalances()->where('leave_type_id', $leaveType->id)->first();
@@ -175,13 +181,9 @@ class User extends Authenticatable
 
         return $totalBalance - $taken;
     }
-	
-	/**
-     * دالة جديدة لتحديد حالة الحضور الحالية للموظف
-     */
+    
     public function getCurrentStatus()
     {
-        // أولاً، نتحقق إذا كان الموظف في إجازة موافق عليها اليوم
         $on_leave = $this->leaveRequests()
             ->where('status', 'approved')
             ->where('start_date', '<=', today())
@@ -191,12 +193,11 @@ class User extends Authenticatable
         if ($on_leave) {
             return [
                 'status' => 'إجازة',
-                'time' => $on_leave->leaveType->name, // يمكن عرض نوع الإجازة
+                'time' => $on_leave->leaveType->name,
                 'class' => 'text-blue-600 font-bold'
             ];
         }
 
-        // ثانياً، نتحقق من سجل الحضور لهذا اليوم
         $attendance_log = $this->attendanceLogs()
             ->whereDate('punch_in_time', today())
             ->latest()
@@ -204,14 +205,12 @@ class User extends Authenticatable
         
         if ($attendance_log) {
             if ($attendance_log->punch_out_time) {
-                // الموظف سجل حضور ثم انصرف
                 return [
                     'status' => 'أنهى دوامه',
                     'time' => \Carbon\Carbon::parse($attendance_log->punch_out_time)->format('h:i A'),
                     'class' => 'text-gray-500'
                 ];
             } else {
-                // الموظف سجل حضور ولم ينصرف بعد
                 return [
                     'status' => 'متواجد',
                     'time' => \Carbon\Carbon::parse($attendance_log->punch_in_time)->format('h:i A'),
@@ -220,47 +219,15 @@ class User extends Authenticatable
             }
         }
 
-        // أخيراً، إذا لم يكن في إجازة ولم يسجل حضور
         return [
             'status' => 'لم يسجل حضور',
             'time' => null,
             'class' => 'text-red-600 font-bold'
         ];
     }
-	
-	/**
-     * تعريف علاقة المستخدم مع سجلات الحضور الخاصة به
-     */
-	public function attendanceLogs(): HasMany
+    
+    public function attendanceLogs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class);
     }
-	
-	
-        public function updatePushSubscription($endpoint, $key, $token)
-{
-    return $this->pushSubscriptions()->updateOrCreate(
-        ['endpoint' => $endpoint],
-        [
-            'public_key' => $key,
-            'auth_token' => $token,
-        ]
-    );
-}
-
-        public function deletePushSubscription(string $endpoint)
-{
-    return $this->pushSubscriptions()->where('endpoint', $endpoint)->delete();
-}
-
-/**
- * The user's push subscriptions.
- *
- * @return \Illuminate\Database\Eloquent\Relations\HasMany
- */
-public function pushSubscriptions()
-{
-    return $this->hasMany(\NotificationChannels\WebPush\PushSubscription::class);
-}
-
 }

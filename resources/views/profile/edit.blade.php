@@ -13,6 +13,25 @@
                     @include('profile.partials.update-profile-information-form')
                 </div>
             </div>
+
+            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+    <div class="max-w-xl">
+        <section class="space-y-6">
+            <header>
+                <h2 class="text-lg font-medium text-gray-900">
+                    تسجيل جهاز بيومتري
+                </h2>
+                <p class="mt-1 text-sm text-gray-600">
+                    سجّل جهازك (لابتوب أو موبايل) الذي يدعم البصمة أو الوجه لاستخدامه في تسجيل الحضور والانصراف بشكل آمن وسريع.
+                </p>
+            </header>
+
+            <button type="button" id="register-webauthn-device" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                تسجيل هذا الجهاز
+            </button>
+        </section>
+    </div>
+</div>
             
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
@@ -150,6 +169,32 @@
             }));
         });
     </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const registerButton = document.getElementById('register-webauthn-device');
+
+        if (registerButton) {
+            registerButton.addEventListener('click', async () => {
+                try {
+                    const options = await window.axios.post('{{ route("webauthn.register.options") }}');
+                    const credential = await WebAuthn.create(options.data); // هذا سيعمل الآن
+                    const verification = await window.axios.post('{{ route("webauthn.register.verify") }}', credential);
+
+                    if (verification.data.verified) {
+                        alert('تم تسجيل الجهاز بنجاح!');
+                        location.reload();
+                    } else {
+                        alert('فشل تسجيل الجهاز.');
+                    }
+                } catch (error) {
+                    console.error("فشل التسجيل:", error);
+                    const errorMessage = error.response ? (error.response.data.message || 'خطأ من الخادم') : error.message;
+                    alert('حدث خطأ أثناء تسجيل الجهاز: ' + errorMessage);
+                }
+            });
+        }
+    });
+</script>
     @endpush
     {{-- ====================================================================== --}}
     {{-- ======================= END: JAVASCRIPT SECTION ====================== --}}

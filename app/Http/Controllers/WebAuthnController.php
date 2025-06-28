@@ -15,7 +15,6 @@ class WebAuthnController extends Controller
      */
     public function generateRegistrationOptions(Request $request): Responsable
     {
-        // المكتبة تتولى كل شيء، بما في ذلك جلب المستخدم الحالي
         return WebAuthn::attestation();
     }
 
@@ -25,9 +24,26 @@ class WebAuthnController extends Controller
      */
     public function verifyRegistration(AttestedRequest $request): array
     {
-        // دالة save() تقوم بالتحقق من صحة الطلب وحفظ الجهاز في قاعدة البيانات
         $request->save();
 
         return ['verified' => true];
+    }
+    
+    /**
+     * (خاص بالتحقق عند تسجيل الدخول أو الحضور)
+     * يُرجع خيارات التحقق.
+     */
+    public function generateAuthenticationOptions(Request $request): Responsable
+    {
+        return WebAuthn::assertion();
+    }
+
+    /**
+     * (خاص بالتحقق عند تسجيل الدخول أو الحضور)
+     * يتحقق من بصمة المستخدم.
+     */
+    public function verifyAuthentication(AssertedRequest $request): array
+    {
+        return ['verified' => WebAuthn::check($request)];
     }
 }
