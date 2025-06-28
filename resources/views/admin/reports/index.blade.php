@@ -84,10 +84,6 @@
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">صورة الحضور</th>
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">الانصراف</th>
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">صورة الانصراف</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">جهاز الحضور</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">منصة الحضور</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">جهاز الانصراف</th>
-                                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">منصة الانصراف</th>
                                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">مدة العمل</th>
                                     </tr>
                                 </thead>
@@ -118,10 +114,6 @@
                                                     <span class="text-gray-400">لا يوجد</span>
                                                 @endif
                                             </td>
-                                            <td class="px-4 py-4 whitespace-nowrap text-center">{{ $log->punch_in_device ?? '-' }}</td>
-                                            <td class="px-4 py-4 whitespace-nowrap text-center">{{ $log->punch_in_platform ?? '-' }}</td>
-                                            <td class="px-4 py-4 whitespace-nowrap text-center">{{ $log->punch_out_device ?? '-' }}</td>
-                                            <td class="px-4 py-4 whitespace-nowrap text-center">{{ $log->punch_out_platform ?? '-' }}</td>
                                             <td class="px-4 py-4 whitespace-nowrap text-center">
                                                 @if($log->punch_out_time)
                                                     @php

@@ -65,16 +65,12 @@
 </div>
 
         <!-- Hidden Forms -->
-        <form id="punchInForm" method="POST" action="{{ route('attendance.punchin') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_in"><input type="hidden" name="longitude" id="longitude_in"><input type="hidden" name="selfie_image" id="selfie_image_in"><input type="hidden" name="credential_id" id="credential_id_in"></form>
-        <form id="punchOutForm" method="POST" action="{{ route('attendance.punchout') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_out"><input type="hidden" name="longitude" id="longitude_out"><input type="hidden" name="selfie_image" id="selfie_image_out"><input type="hidden" name="credential_id" id="credential_id_out"></form>
+        <form id="punchInForm" method="POST" action="{{ route('attendance.punchin') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_in"><input type="hidden" name="longitude" id="longitude_in"><input type="hidden" name="selfie_image" id="selfie_image_in"></form>
+        <form id="punchOutForm" method="POST" action="{{ route('attendance.punchout') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_out"><input type="hidden" name="longitude" id="longitude_out"><input type="hidden" name="selfie_image" id="selfie_image_out"></form>
     </div>
 
     @push('scripts')
 <script>
-    const registeredCreds = @json($credentialIds);
-    const loginChallengeBase64 = @json($challenge);
-    const loginChallenge = Uint8Array.from(atob(loginChallengeBase64), c => c.charCodeAt(0));
-
     function cameraApp() {
         return {
             showModal: false,
@@ -138,36 +134,7 @@
                 const imageData = canvas.toDataURL('image/png');
                 
                 document.getElementById('selfie_image_' + this.actionType).value = imageData;
-                this.requestCredential();
-            },
-
-            requestCredential() {
-                if (!window.PublicKeyCredential) {
-                    alert('جهازك لا يدعم التحقق البيومتري');
-                    return;
-                }
-
-                navigator.credentials.get({
-                    publicKey: {
-                        challenge: loginChallenge,
-                        userVerification: 'required',
-                        allowCredentials: registeredCreds.map(id => ({
-                            type: 'public-key',
-                            id: Uint8Array.from(atob(id), c => c.charCodeAt(0)),
-                            transports: ['internal'],
-                            authenticatorAttachment: 'platform'
-                        }))
-                    }
-                })
-                    .then(cred => {
-                        const rawId = btoa(String.fromCharCode(...new Uint8Array(cred.rawId)));
-                        document.getElementById('credential_id_' + this.actionType).value = rawId;
-                        this.getLocation();
-                    })
-                    .catch(() => {
-                        alert('فشل التحقق البيومتري');
-                        this.closeCamera();
-                    });
+                this.getLocation();
             },
 
             getLocation() {

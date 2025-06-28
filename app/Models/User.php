@@ -11,7 +11,6 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Carbon\Carbon;
 use NotificationChannels\WebPush\HasPushSubscriptions;
-use App\Models\WebAuthnCredential;
 
 
 class User extends Authenticatable
@@ -232,14 +231,9 @@ class User extends Authenticatable
 	/**
      * تعريف علاقة المستخدم مع سجلات الحضور الخاصة به
      */
-    public function attendanceLogs(): HasMany
+	public function attendanceLogs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class);
-    }
-
-    public function webauthnCredentials(): HasMany
-    {
-        return $this->hasMany(WebAuthnCredential::class);
     }
 	
 	

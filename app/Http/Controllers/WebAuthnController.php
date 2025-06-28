@@ -2,38 +2,32 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Laragear\WebAuthn\Http\Requests\AttestedRequest;
+use Laragear\WebAuthn\Facades\WebAuthn;
 
 class WebAuthnController extends Controller
 {
-    public function registerCredential(Request $request)
+    /**
+     * (الخطوة 1 من عملية التسجيل)
+     * يُرجع خيارات التسجيل التي سيستخدمها المتصفح.
+     */
+    public function generateRegistrationOptions(Request $request): Responsable
     {
-        $request->validate([
-            'name' => 'required',
-            'credential_id' => 'required',
-            'public_key' => 'required',
-        ]);
-
-        $request->user()->webauthnCredentials()->create([
-            'name' => $request->name,
-            'credential_id' => $request->credential_id,
-            'public_key' => $request->public_key,
-        ]);
-
-        return response()->json(['status' => 'ok']);
+        // المكتبة تتولى كل شيء، بما في ذلك جلب المستخدم الحالي
+        return WebAuthn::attestation();
     }
 
-    public function verify(Request $request)
+    /**
+     * (الخطوة 2 من عملية التسجيل)
+     * يتحقق من صحة بيانات الاعتماد الجديدة ويحفظها تلقائياً.
+     */
+    public function verifyRegistration(AttestedRequest $request): array
     {
-        $request->validate([
-            'credential_id' => 'required',
-        ]);
+        // دالة save() تقوم بالتحقق من صحة الطلب وحفظ الجهاز في قاعدة البيانات
+        $request->save();
 
-        $valid = $request->user()->webauthnCredentials()
-            ->where('credential_id', $request->credential_id)
-            ->exists();
-
-        return response()->json(['valid' => $valid]);
+        return ['verified' => true];
     }
 }

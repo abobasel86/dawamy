@@ -16,10 +16,6 @@
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">اليوم والتاريخ</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">وقت الحضور</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">وقت الانصراف</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">جهاز الحضور</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">منصة الحضور</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">جهاز الانصراف</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">منصة الانصراف</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">مدة العمل</th>
                                 </tr>
                             </thead>
@@ -35,18 +31,14 @@
                                                 <span class="text-gray-500">لم يسجل انصراف</span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $log->punch_in_device ?? '-' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $log->punch_in_platform ?? '-' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $log->punch_out_device ?? '-' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $log->punch_out_platform ?? '-' }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if($log->punch_out_time)
                                                 @php
-            $punchIn = \Carbon\Carbon::parse($log->punch_in_time);
-            $punchOut = \Carbon\Carbon::parse($log->punch_out_time);
-            $diff = $punchIn->diff($punchOut);
-            printf('%02d:%02d', $diff->h, $diff->i);
-        @endphp
+                                                    $punchIn = \Carbon\Carbon::parse($log->punch_in_time);
+                                                    $punchOut = \Carbon\Carbon::parse($log->punch_out_time);
+                                                    $diff = $punchIn->diff($punchOut);
+                                                    printf('%02d:%02d', $diff->h, $diff->i);
+                                                @endphp
                                             @else
                                                 -
                                             @endif
@@ -54,7 +46,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-6 py-4 text-center">لا يوجد سجلات حضور لعرضها.</td>
+                                        <td colspan="4" class="px-6 py-4 text-center">لا يوجد سجلات حضور لعرضها.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

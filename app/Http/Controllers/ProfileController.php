@@ -16,11 +16,8 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        $challenge = base64_encode(random_bytes(32));
-
         return view('profile.edit', [
             'user' => $request->user(),
-            'registerChallenge' => $challenge,
         ]);
     }
 
