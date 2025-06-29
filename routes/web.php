@@ -14,7 +14,8 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Manager\TeamController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushSubscriptionController;
-use App\Http\Controllers\WebAuthnController;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,14 +47,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push_subscriptions.store');
     Route::post('/push-subscriptions/delete', [PushSubscriptionController::class, 'destroy'])->name('push_subscriptions.destroy');
-    // ===== START: أضف هذه الأسطر =====
-    // المسار الأول: لجلب خيارات التسجيل من الخادم
-    Route::post('/webauthn/register/options', [WebAuthnController::class, 'generateRegistrationOptions'])->name('webauthn.register.options');
-    
-    // المسار الثاني: لإرسال بيانات الجهاز للتحقق منها وحفظها
-    Route::post('/webauthn/register/verify', [WebAuthnController::class, 'verifyRegistration'])->name('webauthn.register.verify');
-    // ===== END: أضف هذه الأسطر =====
-
     
     // Employee Leave Requests Page
     Route::get('/leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
@@ -91,39 +84,7 @@ Route::middleware(['auth', 'role:HR'])->prefix('HR')->name('HR.')->group(functio
     Route::get('reports/export-employees', [ReportController::class, 'exportEmployees'])->name('reports.export.employees');
     Route::get('balances', [BalanceController::class, 'index'])->name('balances.index');
 });
-if (app()->environment('local')) {
-    Route::get('/test-pure-openssl', function () {
-        try {
-            // هذا هو نفس الكود تماماً الذي يسبب الانهيار داخل المكتبة
-            $keyResource = openssl_pkey_new([
-                'curve_name'       => 'prime256v1',
-                'private_key_type' => OPENSSL_KEYTYPE_EC,
-            ]);
 
-            if (!$keyResource) {
-                return "<h1>فشل: دالة openssl_pkey_new() لم تتمكن من إنشاء المفتاح، ولكن بدون خطأ فادح.</h1>";
-            }
-
-        // إذا نجحت الخطوة السابقة، نحاول الحصول على تفاصيل المفتاح
-            $details = openssl_pkey_get_details($keyResource);
-
-            if (!$details) {
-                return "<h1>فشل: تم إنشاء المفتاح، ولكن لا يمكن قراءة تفاصيله.</h1>";
-            }
-
-        // إذا نجح كل شيء، نعرض رسالة النجاح والتفاصيل
-            echo "<h1>نجاح باهر!</h1>";
-            echo "<p>هذا يعني أن بيئة OpenSSL لديك تعمل بشكل سليم عند استدعائها مباشرة.</p>";
-            echo "<p>المشكلة تكمن في مكتبة web-push.</p>";
-            dd($details);
-
-        } catch (\Throwable $e) {
-            // إذا حدث أي خطأ فادح، نعرضه
-            echo "<h1>حدث خطأ فادح عند محاولة استدعاء الدالة مباشرة:</h1>";
-            dd($e);
-        }
-    });
-}
-
+WebAuthnRoutes::register()->withoutMiddleware(VerifyCsrfToken::class);
 
 require __DIR__.'/auth.php';

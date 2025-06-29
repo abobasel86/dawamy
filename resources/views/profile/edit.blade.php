@@ -170,30 +170,43 @@
         });
     </script>
     <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const registerButton = document.getElementById('register-webauthn-device');
+document.addEventListener('DOMContentLoaded', () => {
+    const registerButton = document.getElementById('register-webauthn-device');
 
-        if (registerButton) {
-            registerButton.addEventListener('click', async () => {
-                try {
-                    const options = await window.axios.post('{{ route("webauthn.register.options") }}');
-                    const credential = await WebAuthn.create(options.data); // هذا سيعمل الآن
-                    const verification = await window.axios.post('{{ route("webauthn.register.verify") }}', credential);
+    if (registerButton) {
+        registerButton.addEventListener('click', async () => {
+            // التحقق مما إذا كان المتصفح يدعم WebAuthn
+            if (Webpass.isUnsupported()) {
+                return alert("متصفحك لا يدعم تسجيل الدخول بالبصمة.");
+            }
 
-                    if (verification.data.verified) {
-                        alert('تم تسجيل الجهاز بنجاح!');
-                        location.reload();
-                    } else {
-                        alert('فشل تسجيل الجهاز.');
-                    }
-                } catch (error) {
-                    console.error("فشل التسجيل:", error);
-                    const errorMessage = error.response ? (error.response.data.message || 'خطأ من الخادم') : error.message;
-                    alert('حدث خطأ أثناء تسجيل الجهاز: ' + errorMessage);
+            registerButton.disabled = true;
+            registerButton.innerText = 'جاري التسجيل...';
+
+            try {
+                // استخدام Webpass.attest لتنفيذ عملية التسجيل الكاملة
+                const { success, error } = await Webpass.attest(
+                    "{{ route('webauthn.register.options') }}", // مسار جلب الخيارات
+                    "{{ route('webauthn.register') }}"         // مسار التحقق من التسجيل
+                );
+
+                if (success) {
+                    alert('تم تسجيل الجهاز بنجاح!');
+                    window.location.reload();
+                } else {
+                    // عرض رسالة الخطأ من المكتبة مباشرة
+                    alert(`فشل تسجيل الجهاز: ${error.message}`);
                 }
-            });
-        }
-    });
+            } catch (e) {
+                console.error("فشل التسجيل:", e);
+                alert('حدث خطأ غير متوقع أثناء تسجيل الجهاز.');
+            } finally {
+                registerButton.disabled = false;
+                registerButton.innerText = 'تسجيل هذا الجهاز';
+            }
+        });
+    }
+});
 </script>
     @endpush
     {{-- ====================================================================== --}}
