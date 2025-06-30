@@ -155,6 +155,10 @@
             },
 
             async submitWithPasskey(lat, lon) {
+                if (typeof Webpass === 'undefined' || Webpass.isUnsupported()) {
+                    alert('متصفحك لا يدعم البصمة أو تعذر تحميل المكتبة.');
+                    return;
+                }
                 try {
                     const { success } = await this.webpass.assert(
                         "{{ route('webauthn.login.options') }}",
