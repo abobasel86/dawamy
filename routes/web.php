@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Manager\TeamController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushSubscriptionController;
+use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
+use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +31,9 @@ use App\Http\Controllers\PushSubscriptionController;
 Route::get('/', function () {
     return view('welcome');
 });
+
+// WebAuthn Routes
+WebAuthnRoutes::register()->withoutMiddleware(VerifyCsrfToken::class);
 
 // Employee Routes
 Route::middleware(['auth'])->group(function () {
