@@ -6,8 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\AttendanceLog;
+use Laragear\WebAuthn\Models\WebAuthnCredential;
 use Carbon\Carbon;
-use Laragear\WebAuthn\Assertion\Validator\{AssertionValidator, AssertionValidation};
+use Webauthn;
 
 class AttendanceController extends Controller
 {
@@ -31,7 +32,7 @@ class AttendanceController extends Controller
         return view('attendance.history', compact('attendanceLogs'));
     }
 
-    public function punchIn(Request $request, AssertionValidator $validator)
+    public function punchIn(Request $request)
     {
         $user = Auth::user();
         
@@ -61,12 +62,15 @@ class AttendanceController extends Controller
             return back()->with('error', 'لا يمكنك تسجيل حضور جديد قبل تسجيل الانصراف من الجلسة السابقة.');
         }
 
+        $credentialId = $request->input('credential_id');
+        if (! $credentialId) {
+            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
+        }
+
         try {
-            $validation = $validator
-                ->send(AssertionValidation::fromRequest($request))
-                ->thenReturn();
-            if ($validation->credential) {
-                $validation->credential->syncCounter($validation->authenticatorData->counter);
+            $assertion = Webauthn::validateAssertion($request);
+            if ($credential = WebAuthnCredential::find($credentialId)) {
+                $credential->syncCounter($assertion->getCounter());
             }
         } catch (\Throwable $e) {
             return back()->with('error', 'فشل التحقق من بيانات الدخول.');
@@ -99,7 +103,7 @@ class AttendanceController extends Controller
     /**
      * ==== تم تحديث هذه الدالة لتشمل التحقق من الموقع ====
      */
-    public function punchOut(Request $request, AssertionValidator $validator)
+    public function punchOut(Request $request)
     {
         $user = Auth::user();
         
@@ -132,12 +136,15 @@ class AttendanceController extends Controller
             return back()->with('error', 'لم يتم العثور على سجل حضور مفتوح.');
         }
 
+        $credentialId = $request->input('credential_id');
+        if (! $credentialId) {
+            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
+        }
+
         try {
-            $validation = $validator
-                ->send(AssertionValidation::fromRequest($request))
-                ->thenReturn();
-            if ($validation->credential) {
-                $validation->credential->syncCounter($validation->authenticatorData->counter);
+            $assertion = Webauthn::validateAssertion($request);
+            if ($credential = WebAuthnCredential::find($credentialId)) {
+                $credential->syncCounter($assertion->getCounter());
             }
         } catch (\Throwable $e) {
             return back()->with('error', 'فشل التحقق من بيانات الدخول.');

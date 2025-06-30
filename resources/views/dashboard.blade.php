@@ -6,11 +6,7 @@
     </x-slot>
 
     <!-- Alpine.js component for camera modal -->
-    <div x-data="cameraApp"
-         data-login-options="{{ route('webauthn.login.options') }}"
-         data-punchin="{{ route('attendance.punchin') }}"
-         data-punchout="{{ route('attendance.punchout') }}"
-         data-dashboard="{{ route('dashboard') }}">
+    <div x-data="cameraApp()">
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -68,7 +64,104 @@
     </div>
 </div>
 
+        <!-- Hidden Forms -->
+        <form id="punchInForm" method="POST" action="{{ route('attendance.punchin') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_in"><input type="hidden" name="longitude" id="longitude_in"><input type="hidden" name="selfie_image" id="selfie_image_in"></form>
+        <form id="punchOutForm" method="POST" action="{{ route('attendance.punchout') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_out"><input type="hidden" name="longitude" id="longitude_out"><input type="hidden" name="selfie_image" id="selfie_image_out"></form>
     </div>
 
+    @push('scripts')
+<script>
+    function cameraApp() {
+        return {
+            showModal: false,
+            stream: null,
+            actionType: '',
 
+            openCamera(type) {
+                this.actionType = type;
+                this.showModal = true;
+                
+                this.$nextTick(() => {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            this.stream = stream;
+                            const videoElement = this.$refs.video;
+
+                            // ===== هذا هو الجزء الأهم الذي يحل المشكلة =====
+                            // نتأكد من أن عنصر الفيديو موجود وجاهز قبل استخدامه
+                            if (videoElement) {
+                                videoElement.srcObject = stream;
+                            } else {
+                                // إذا لم يكن جاهزاً، نظهر رسالة خطأ ونغلق النافذة
+                                console.error("AlpineJS could not find the x-ref='video' element in time.");
+                                alert("حدث خطأ في تهيئة الكاميرا. الرجاء المحاولة مرة أخرى.");
+                                this.closeCamera();
+                            }
+                            // ============================================
+
+                        })
+                        .catch(err => {
+                            console.error("Error accessing camera: ", err);
+                            if(err.name === "NotAllowedError") {
+                                alert("لقد قمت برفض إذن استخدام الكاميرا. لا يمكن تسجيل الحضور بدونها.");
+                            } else {
+                                alert("لا يمكن الوصول إلى الكاميرا. تأكد من عدم استخدامها في تطبيق آخر.");
+                            }
+                            this.closeCamera();
+                        });
+                });
+            },
+
+            // --- باقي الدوال تبقى كما هي ---
+            closeCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                }
+                this.showModal = false;
+            },
+
+            captureAndSubmit() {
+                const video = this.$refs.video;
+                const canvas = this.$refs.canvas;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = canvas.toDataURL('image/png');
+                
+                document.getElementById('selfie_image_' + this.actionType).value = imageData;
+                this.getLocation();
+            },
+
+            getLocation() {
+                const form = document.getElementById('punch' + (this.actionType.charAt(0).toUpperCase() + this.actionType.slice(1)) + 'Form');
+                const latInput = document.getElementById('latitude_' + this.actionType);
+                const lonInput = document.getElementById('longitude_' + this.actionType);
+                
+                document.getElementById('loading-spinner').style.display = 'block';
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        latInput.value = position.coords.latitude;
+                        lonInput.value = position.coords.longitude;
+                        form.submit();
+                    },
+                    (err) => {
+                        document.getElementById('loading-spinner').style.display = 'none';
+                        const errorMsg = 'فشل تحديد الموقع. يرجى التأكد من تفعيل خدمات الموقع والموافقة على الإذن.';
+                        document.getElementById('geo-error-message').innerText = errorMsg;
+                        document.getElementById('geo-error-message').style.display = 'block';
+                         alert(errorMsg + ` السبب: ${err.message}`);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }
+        }
+    }
+</script>
+@endpush
 </x-app-layout>
