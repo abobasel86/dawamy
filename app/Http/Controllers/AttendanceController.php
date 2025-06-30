@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\AttendanceLog;
-use Laragear\WebAuthn\Models\WebAuthnCredential;
 use Carbon\Carbon;
 use Webauthn;
 
