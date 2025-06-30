@@ -209,6 +209,7 @@
         }
     </script>
     
+    <script src="https://cdn.jsdelivr.net/npm/@laragear/webpass@2/dist/webpass.js" defer></script>
     @stack('scripts')
 </body>
 </html>
