@@ -2,9 +2,14 @@
 
 use App\Models\User;
 use App\Models\Location;
-use App\Models\WebAuthnCredential;
+use Laragear\WebAuthn\Models\WebAuthnCredential;
+use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
 use App\Models\AttendanceLog;
 use Illuminate\Support\Facades\Storage;
+
+beforeEach(function () {
+    WebAuthnRoutes::register();
+});
 
 it('rejects punch in when outside allowed location', function () {
     Storage::fake('public');

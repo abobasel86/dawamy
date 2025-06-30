@@ -2,10 +2,15 @@
 
 use App\Models\User;
 use App\Models\Location;
-use App\Models\WebAuthnCredential;
+use Laragear\WebAuthn\Models\WebAuthnCredential;
+use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
 use App\Models\AttendanceLog;
 use Mockery;
 use Webauthn;
+
+beforeEach(function () {
+    WebAuthnRoutes::register();
+});
 
 it('allows punching in with valid credential', function () {
     $location = Location::create([
