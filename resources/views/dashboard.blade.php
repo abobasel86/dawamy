@@ -74,6 +74,7 @@
             stream: null,
             actionType: '',
             selfie: null,
+            webpass: Webpass.create({ findCsrfToken: true }),
 
             openCamera(type) {
                 this.actionType = type;
@@ -155,7 +156,7 @@
 
             async submitWithPasskey(lat, lon) {
                 try {
-                    const { success } = await Webpass.assert(
+                    const { success } = await this.webpass.assert(
                         "{{ route('webauthn.login.options') }}",
                         {
                             path: this.actionType === 'in' ? "{{ route('attendance.punchin') }}" : "{{ route('attendance.punchout') }}",
