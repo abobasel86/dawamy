@@ -64,9 +64,6 @@
     </div>
 </div>
 
-        <!-- Hidden Forms -->
-        <form id="punchInForm" method="POST" action="{{ route('attendance.punchin') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_in"><input type="hidden" name="longitude" id="longitude_in"><input type="hidden" name="selfie_image" id="selfie_image_in"></form>
-        <form id="punchOutForm" method="POST" action="{{ route('attendance.punchout') }}" class="hidden">@csrf<input type="hidden" name="latitude" id="latitude_out"><input type="hidden" name="longitude" id="longitude_out"><input type="hidden" name="selfie_image" id="selfie_image_out"></form>
     </div>
 
     @push('scripts')
@@ -76,6 +73,7 @@
             showModal: false,
             stream: null,
             actionType: '',
+            selfie: null,
 
             openCamera(type) {
                 this.actionType = type;
@@ -120,7 +118,7 @@
                 this.showModal = false;
             },
 
-            captureAndSubmit() {
+            async captureAndSubmit() {
                 const video = this.$refs.video;
                 const canvas = this.$refs.canvas;
                 canvas.width = video.videoWidth;
@@ -132,33 +130,55 @@
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
                 const imageData = canvas.toDataURL('image/png');
-                
-                document.getElementById('selfie_image_' + this.actionType).value = imageData;
-                this.getLocation();
+
+                this.selfie = imageData;
+                await this.getLocation();
             },
 
-            getLocation() {
-                const form = document.getElementById('punch' + (this.actionType.charAt(0).toUpperCase() + this.actionType.slice(1)) + 'Form');
-                const latInput = document.getElementById('latitude_' + this.actionType);
-                const lonInput = document.getElementById('longitude_' + this.actionType);
-                
+            async getLocation() {
                 document.getElementById('loading-spinner').style.display = 'block';
 
                 navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        latInput.value = position.coords.latitude;
-                        lonInput.value = position.coords.longitude;
-                        form.submit();
+                    async (position) => {
+                        await this.submitWithPasskey(position.coords.latitude, position.coords.longitude);
                     },
                     (err) => {
                         document.getElementById('loading-spinner').style.display = 'none';
                         const errorMsg = 'فشل تحديد الموقع. يرجى التأكد من تفعيل خدمات الموقع والموافقة على الإذن.';
                         document.getElementById('geo-error-message').innerText = errorMsg;
                         document.getElementById('geo-error-message').style.display = 'block';
-                         alert(errorMsg + ` السبب: ${err.message}`);
+                        alert(errorMsg + ` السبب: ${err.message}`);
                     },
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
                 );
+            },
+
+            async submitWithPasskey(lat, lon) {
+                try {
+                    const { success } = await Webpass.assert(
+                        "{{ route('webauthn.login.options') }}",
+                        {
+                            path: this.actionType === 'in' ? "{{ route('attendance.punchin') }}" : "{{ route('attendance.punchout') }}",
+                            body: {
+                                latitude: lat,
+                                longitude: lon,
+                                selfie_image: this.selfie,
+                            },
+                        }
+                    );
+
+                    if (success) {
+                        window.location.href = "{{ route('dashboard') }}";
+                    } else {
+                        alert('فشل التحقق من بيانات الدخول.');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('فشل التحقق من بيانات الدخول.');
+                } finally {
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    this.closeCamera();
+                }
             }
         }
     }

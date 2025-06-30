@@ -35,7 +35,6 @@ it('allows punching in with valid credential', function () {
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
         'longitude' => 0,
-        'credential_id' => 'valid-cred',
     ]);
 
     $response->assertRedirect('/dashboard');
@@ -64,7 +63,6 @@ it('rejects punching in with invalid credential', function () {
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
         'longitude' => 0,
-        'credential_id' => 'wrong-cred',
     ]);
 
     $response->assertSessionHas('error');

@@ -34,7 +34,6 @@ it('rejects punch in when outside allowed location', function () {
         ->post('/punch-in', [
             'latitude' => 1,
             'longitude' => 1,
-            'credential_id' => 'cred-1',
         ]);
 
     $response->assertSessionHas('error');
@@ -67,7 +66,6 @@ it('stores selfie and device details on successful punch in', function () {
         ->post('/punch-in', [
             'latitude' => 0,
             'longitude' => 0,
-            'credential_id' => 'cred-1',
             'selfie_image' => $base64,
         ]);
 

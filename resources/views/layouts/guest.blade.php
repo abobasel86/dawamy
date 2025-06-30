@@ -14,6 +14,7 @@
 
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <script src="https://cdn.jsdelivr.net/npm/@laragear/webpass@2/dist/webpass.js" defer></script>
         
         {{-- تطبيق الخط على الصفحة --}}
         <style>
