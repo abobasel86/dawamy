@@ -164,6 +164,7 @@
                         "{{ route('webauthn.login.options') }}",
                         {
                             path: this.actionType === 'in' ? "{{ route('attendance.punchin') }}" : "{{ route('attendance.punchout') }}",
+                            findCsrfToken: true,
                             body: {
                                 latitude: lat,
                                 longitude: lon,
