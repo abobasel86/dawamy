@@ -33,7 +33,9 @@ Route::get('/', function () {
 });
 
 // WebAuthn Routes
-WebAuthnRoutes::register()->withoutMiddleware(VerifyCsrfToken::class);
+Route::withoutMiddleware(VerifyCsrfToken::class)->group(function () {
+    WebAuthnRoutes::register();
+});
 
 // Employee Routes
 Route::middleware(['auth'])->group(function () {
