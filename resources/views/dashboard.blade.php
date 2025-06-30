@@ -19,12 +19,12 @@
 
                         <!-- Action Buttons -->
                         <div id="action-buttons">
-    @if ($hasPunchedIn)
-        <button @click="startPunchProcess('out')" type="button" class="btn-secondary text-lg">تسجيل انصراف</button>
-    @else
-        <button @click="startPunchProcess('in')" type="button" class="btn-primary text-lg">تسجيل حضور</button>
-    @endif
-</div>
+                            @if ($hasPunchedIn)
+                                <button @click="openCamera('out')" type="button" class="btn-secondary text-lg">تسجيل انصراف</button>
+                            @else
+                                <button @click="openCamera('in')" type="button" class="btn-primary text-lg">تسجيل حضور</button>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -72,108 +72,96 @@
     @push('scripts')
 <script>
     function cameraApp() {
-    return {
-        showModal: false,
-        stream: null,
-        actionType: '',
+        return {
+            showModal: false,
+            stream: null,
+            actionType: '',
 
-        // دالة جديدة لبدء عملية الحضور/الانصراف
-        async startPunchProcess(type) {
-            this.actionType = type;
-            const button = document.querySelector(`#action-buttons button`);
-            button.disabled = true;
-            button.innerText = 'يرجى المصادقة...';
+            openCamera(type) {
+                this.actionType = type;
+                this.showModal = true;
+                
+                this.$nextTick(() => {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                        .then(stream => {
+                            this.stream = stream;
+                            const videoElement = this.$refs.video;
 
-            if (Webpass.isUnsupported()) {
-                return alert("متصفحك لا يدعم هذه الميزة.");
-            }
+                            // ===== هذا هو الجزء الأهم الذي يحل المشكلة =====
+                            // نتأكد من أن عنصر الفيديو موجود وجاهز قبل استخدامه
+                            if (videoElement) {
+                                videoElement.srcObject = stream;
+                            } else {
+                                // إذا لم يكن جاهزاً، نظهر رسالة خطأ ونغلق النافذة
+                                console.error("AlpineJS could not find the x-ref='video' element in time.");
+                                alert("حدث خطأ في تهيئة الكاميرا. الرجاء المحاولة مرة أخرى.");
+                                this.closeCamera();
+                            }
+                            // ============================================
 
-            try {
-                // الخطوة 1: التحقق من البصمة أولاً
-                const { success, error } = await Webpass.assert(
-                    "{{ route('webauthn.login.options') }}",
-                    "{{ route('webauthn.login') }}"
-                );
+                        })
+                        .catch(err => {
+                            console.error("Error accessing camera: ", err);
+                            if(err.name === "NotAllowedError") {
+                                alert("لقد قمت برفض إذن استخدام الكاميرا. لا يمكن تسجيل الحضور بدونها.");
+                            } else {
+                                alert("لا يمكن الوصول إلى الكاميرا. تأكد من عدم استخدامها في تطبيق آخر.");
+                            }
+                            this.closeCamera();
+                        });
+                });
+            },
 
-                if (success) {
-                    // الخطوة 2: إذا نجح التحقق، افتح الكاميرا
-                    this.openCamera();
-                } else {
-                    alert(`فشلت المصادقة: ${error.message}`);
+            // --- باقي الدوال تبقى كما هي ---
+            closeCamera() {
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
                 }
-            } catch (e) {
-                console.error("فشل التحقق:", e);
-                alert('حدث خطأ أثناء محاولة التحقق.');
-            } finally {
-                 button.disabled = false;
-                 button.innerText = this.actionType === 'in' ? 'تسجيل حضور' : 'تسجيل انصراف';
+                this.showModal = false;
+            },
+
+            captureAndSubmit() {
+                const video = this.$refs.video;
+                const canvas = this.$refs.canvas;
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const imageData = canvas.toDataURL('image/png');
+                
+                document.getElementById('selfie_image_' + this.actionType).value = imageData;
+                this.getLocation();
+            },
+
+            getLocation() {
+                const form = document.getElementById('punch' + (this.actionType.charAt(0).toUpperCase() + this.actionType.slice(1)) + 'Form');
+                const latInput = document.getElementById('latitude_' + this.actionType);
+                const lonInput = document.getElementById('longitude_' + this.actionType);
+                
+                document.getElementById('loading-spinner').style.display = 'block';
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        latInput.value = position.coords.latitude;
+                        lonInput.value = position.coords.longitude;
+                        form.submit();
+                    },
+                    (err) => {
+                        document.getElementById('loading-spinner').style.display = 'none';
+                        const errorMsg = 'فشل تحديد الموقع. يرجى التأكد من تفعيل خدمات الموقع والموافقة على الإذن.';
+                        document.getElementById('geo-error-message').innerText = errorMsg;
+                        document.getElementById('geo-error-message').style.display = 'block';
+                         alert(errorMsg + ` السبب: ${err.message}`);
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
             }
-        },
-
-        openCamera() {
-            this.showModal = true;
-            this.$nextTick(() => {
-                navigator.mediaDevices.getUserMedia({ video: true })
-                    .then(stream => {
-                        this.stream = stream;
-                        if (this.$refs.video) {
-                            this.$refs.video.srcObject = stream;
-                        }
-                    })
-                    .catch(err => {
-                        alert("لا يمكن الوصول إلى الكاميرا.");
-                        this.closeCamera();
-                    });
-            });
-        },
-
-        closeCamera() {
-            if (this.stream) {
-                this.stream.getTracks().forEach(track => track.stop());
-            }
-            this.showModal = false;
-        },
-
-        captureAndSubmit() {
-            const video = this.$refs.video;
-            const canvas = this.$refs.canvas;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.translate(canvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvas.toDataURL('image/png');
-
-            document.getElementById('selfie_image_' + this.actionType).value = imageData;
-            this.getLocation();
-        },
-
-        getLocation() {
-            const form = document.getElementById('punch' + (this.actionType.charAt(0).toUpperCase() + this.actionType.slice(1)) + 'Form');
-            const latInput = document.getElementById('latitude_' + this.actionType);
-            const lonInput = document.getElementById('longitude_' + this.actionType);
-
-            document.getElementById('loading-spinner').style.display = 'block';
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    latInput.value = position.coords.latitude;
-                    lonInput.value = position.coords.longitude;
-                    form.submit();
-                },
-                (err) => {
-                    document.getElementById('loading-spinner').style.display = 'none';
-                    const errorMsg = 'فشل تحديد الموقع. يرجى التأكد من تفعيل خدمات الموقع.';
-                    document.getElementById('geo-error-message').innerText = errorMsg;
-                    document.getElementById('geo-error-message').style.display = 'block';
-                    alert(errorMsg + ` السبب: ${err.message}`);
-                },
-                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-            );
         }
     }
-}
 </script>
 @endpush
 </x-app-layout>

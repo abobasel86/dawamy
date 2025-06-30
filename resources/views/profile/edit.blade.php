@@ -13,25 +13,6 @@
                     @include('profile.partials.update-profile-information-form')
                 </div>
             </div>
-
-            <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-    <div class="max-w-xl">
-        <section class="space-y-6">
-            <header>
-                <h2 class="text-lg font-medium text-gray-900">
-                    تسجيل جهاز بيومتري
-                </h2>
-                <p class="mt-1 text-sm text-gray-600">
-                    سجّل جهازك (لابتوب أو موبايل) الذي يدعم البصمة أو الوجه لاستخدامه في تسجيل الحضور والانصراف بشكل آمن وسريع.
-                </p>
-            </header>
-
-            <button type="button" id="register-webauthn-device" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                تسجيل هذا الجهاز
-            </button>
-        </section>
-    </div>
-</div>
             
             <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <div class="max-w-xl">
@@ -169,45 +150,6 @@
             }));
         });
     </script>
-    <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const registerButton = document.getElementById('register-webauthn-device');
-
-    if (registerButton) {
-        registerButton.addEventListener('click', async () => {
-            // التحقق مما إذا كان المتصفح يدعم WebAuthn
-            if (Webpass.isUnsupported()) {
-                return alert("متصفحك لا يدعم تسجيل الدخول بالبصمة.");
-            }
-
-            registerButton.disabled = true;
-            registerButton.innerText = 'جاري التسجيل...';
-
-            try {
-                // استخدام Webpass.attest لتنفيذ عملية التسجيل الكاملة
-                const { success, error } = await Webpass.attest(
-                    "{{ route('webauthn.register.options') }}", // مسار جلب الخيارات
-                    "{{ route('webauthn.register') }}"         // مسار التحقق من التسجيل
-                );
-
-                if (success) {
-                    alert('تم تسجيل الجهاز بنجاح!');
-                    window.location.reload();
-                } else {
-                    // عرض رسالة الخطأ من المكتبة مباشرة
-                    alert(`فشل تسجيل الجهاز: ${error.message}`);
-                }
-            } catch (e) {
-                console.error("فشل التسجيل:", e);
-                alert('حدث خطأ غير متوقع أثناء تسجيل الجهاز.');
-            } finally {
-                registerButton.disabled = false;
-                registerButton.innerText = 'تسجيل هذا الجهاز';
-            }
-        });
-    }
-});
-</script>
     @endpush
     {{-- ====================================================================== --}}
     {{-- ======================= END: JAVASCRIPT SECTION ====================== --}}

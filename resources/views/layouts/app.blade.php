@@ -22,8 +22,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    <script src="https://cdn.jsdelivr.net/npm/@laragear/webpass@2/dist/webpass.js" defer></script>
-    
     <style>
         :root {
             --primary-color: #156b68;
@@ -212,6 +210,5 @@
     </script>
     
     @stack('scripts')
-
 </body>
 </html>
