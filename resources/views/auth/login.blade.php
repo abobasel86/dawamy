@@ -43,5 +43,11 @@
                 {{ __('Log in') }}
             </x-primary-button>
         </div>
+
+        <div class="flex items-center justify-center mt-4">
+            <a href="{{ route('login.webauthn') }}" class="underline text-sm text-gray-600 hover:text-gray-900">
+                {{ __('تسجيل الدخول بالبصمة') }}
+            </a>
+        </div>
     </form>
 </x-guest-layout>
