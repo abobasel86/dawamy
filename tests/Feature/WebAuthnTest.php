@@ -35,7 +35,6 @@ it('allows punching in with valid credential', function () {
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
         'longitude' => 0,
-        'credential_id' => 'valid-cred',
     ]);
 
     $response->assertRedirect('/dashboard');
@@ -64,7 +63,6 @@ it('rejects punching in with invalid credential', function () {
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
         'longitude' => 0,
-        'credential_id' => 'wrong-cred',
     ]);
 
     $response->assertSessionHas('error');
@@ -110,4 +108,35 @@ it('stores public key when registering credential', function () {
     $response->assertOk();
     $cred = WebAuthnCredential::first();
     expect($cred->public_key)->toBe(base64_encode('pk-data'));
+});
+
+it('allows user to delete own credential', function () {
+    $user = User::factory()->create();
+    $cred = WebAuthnCredential::create([
+        'user_id' => $user->id,
+        'name' => 'finger',
+        'credential_id' => 'cred-1',
+        'public_key' => 'pk',
+    ]);
+
+    $response = $this->actingAs($user)->delete(route('passkeys.destroy', $cred));
+
+    $response->assertRedirect();
+    expect(WebAuthnCredential::count())->toBe(0);
+});
+
+it('prevents deleting credential of another user', function () {
+    $user = User::factory()->create();
+    $other = User::factory()->create();
+    $cred = WebAuthnCredential::create([
+        'user_id' => $other->id,
+        'name' => 'finger',
+        'credential_id' => 'cred-2',
+        'public_key' => 'pk',
+    ]);
+
+    $response = $this->actingAs($user)->delete(route('passkeys.destroy', $cred));
+
+    $response->assertForbidden();
+    expect(WebAuthnCredential::count())->toBe(1);
 });

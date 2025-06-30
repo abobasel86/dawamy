@@ -62,15 +62,10 @@ class AttendanceController extends Controller
             return back()->with('error', 'لا يمكنك تسجيل حضور جديد قبل تسجيل الانصراف من الجلسة السابقة.');
         }
 
-        $credentialId = $request->input('credential_id');
-        if (! $credentialId) {
-            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
-        }
-
         try {
             $assertion = Webauthn::validateAssertion($request);
-            if ($credential = WebAuthnCredential::find($credentialId)) {
-                $credential->syncCounter($assertion->getCounter());
+            if ($assertion->credential) {
+                $assertion->credential->syncCounter($assertion->authenticatorData->counter);
             }
         } catch (\Throwable $e) {
             return back()->with('error', 'فشل التحقق من بيانات الدخول.');
@@ -136,15 +131,10 @@ class AttendanceController extends Controller
             return back()->with('error', 'لم يتم العثور على سجل حضور مفتوح.');
         }
 
-        $credentialId = $request->input('credential_id');
-        if (! $credentialId) {
-            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
-        }
-
         try {
             $assertion = Webauthn::validateAssertion($request);
-            if ($credential = WebAuthnCredential::find($credentialId)) {
-                $credential->syncCounter($assertion->getCounter());
+            if ($assertion->credential) {
+                $assertion->credential->syncCounter($assertion->authenticatorData->counter);
             }
         } catch (\Throwable $e) {
             return back()->with('error', 'فشل التحقق من بيانات الدخول.');
