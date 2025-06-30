@@ -6,7 +6,7 @@ use Laragear\WebAuthn\Models\WebAuthnCredential;
 use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
 use App\Models\AttendanceLog;
 use Mockery;
-use Webauthn;
+use Laragear\WebAuthn\Assertion\Validator\AssertionValidator;
 
 beforeEach(function () {
     WebAuthnRoutes::register();
@@ -28,9 +28,14 @@ it('allows punching in with valid credential', function () {
         'public_key' => 'pk',
     ]);
 
-    $assertion = Mockery::mock();
-    $assertion->shouldReceive('getCounter')->andReturn(5);
-    Webauthn::shouldReceive('validateAssertion')->once()->andReturn($assertion);
+    $validator = Mockery::mock(AssertionValidator::class);
+    $this->app->instance(AssertionValidator::class, $validator);
+    $validation = (object) [
+        'credential' => $cred,
+        'authenticatorData' => (object) ['counter' => 5],
+    ];
+    $validator->shouldReceive('send')->once()->andReturnSelf();
+    $validator->shouldReceive('thenReturn')->once()->andReturn($validation);
 
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
@@ -58,7 +63,10 @@ it('rejects punching in with invalid credential', function () {
         'public_key' => 'pk',
     ]);
 
-    Webauthn::shouldReceive('validateAssertion')->once()->andThrow(new Exception('invalid'));
+    $validator = Mockery::mock(AssertionValidator::class);
+    $this->app->instance(AssertionValidator::class, $validator);
+    $validator->shouldReceive('send')->once()->andReturnSelf();
+    $validator->shouldReceive('thenReturn')->once()->andThrow(new Exception('invalid'));
 
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
@@ -85,7 +93,9 @@ it('rejects punching in without credential', function () {
         'public_key' => 'pk',
     ]);
 
-    Webauthn::shouldReceive('validateAssertion')->never();
+    $validator = Mockery::mock(AssertionValidator::class);
+    $this->app->instance(AssertionValidator::class, $validator);
+    $validator->shouldReceive('send')->never();
 
     $response = $this->actingAs($user)->post('/punch-in', [
         'latitude' => 0,
