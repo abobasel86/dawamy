@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\AttendanceLog;
 use Carbon\Carbon;
-use Webauthn;
+use Laragear\WebAuthn\Assertion\Validator\{AssertionValidator, AssertionValidation};
 
 class AttendanceController extends Controller
 {
@@ -31,7 +31,7 @@ class AttendanceController extends Controller
         return view('attendance.history', compact('attendanceLogs'));
     }
 
-    public function punchIn(Request $request)
+    public function punchIn(Request $request, AssertionValidator $validator)
     {
         $user = Auth::user();
         
@@ -62,9 +62,11 @@ class AttendanceController extends Controller
         }
 
         try {
-            $assertion = Webauthn::validateAssertion($request);
-            if ($assertion->credential) {
-                $assertion->credential->syncCounter($assertion->authenticatorData->counter);
+            $validation = $validator
+                ->send(AssertionValidation::fromRequest($request))
+                ->thenReturn();
+            if ($validation->credential) {
+                $validation->credential->syncCounter($validation->authenticatorData->counter);
             }
         } catch (\Throwable $e) {
             return back()->with('error', 'فشل التحقق من بيانات الدخول.');
@@ -97,7 +99,7 @@ class AttendanceController extends Controller
     /**
      * ==== تم تحديث هذه الدالة لتشمل التحقق من الموقع ====
      */
-    public function punchOut(Request $request)
+    public function punchOut(Request $request, AssertionValidator $validator)
     {
         $user = Auth::user();
         
@@ -131,9 +133,11 @@ class AttendanceController extends Controller
         }
 
         try {
-            $assertion = Webauthn::validateAssertion($request);
-            if ($assertion->credential) {
-                $assertion->credential->syncCounter($assertion->authenticatorData->counter);
+            $validation = $validator
+                ->send(AssertionValidation::fromRequest($request))
+                ->thenReturn();
+            if ($validation->credential) {
+                $validation->credential->syncCounter($validation->authenticatorData->counter);
             }
         } catch (\Throwable $e) {
             return back()->with('error', 'فشل التحقق من بيانات الدخول.');
