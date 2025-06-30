@@ -6,7 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Models\AttendanceLog;
+use Laragear\WebAuthn\Models\WebAuthnCredential;
 use Carbon\Carbon;
+use Webauthn;
 
 class AttendanceController extends Controller
 {
@@ -58,6 +60,20 @@ class AttendanceController extends Controller
 
         if ($hasOpenAttendance) {
             return back()->with('error', 'لا يمكنك تسجيل حضور جديد قبل تسجيل الانصراف من الجلسة السابقة.');
+        }
+
+        $credentialId = $request->input('credential_id');
+        if (! $credentialId) {
+            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
+        }
+
+        try {
+            $assertion = Webauthn::validateAssertion($request);
+            if ($credential = WebAuthnCredential::find($credentialId)) {
+                $credential->syncCounter($assertion->getCounter());
+            }
+        } catch (\Throwable $e) {
+            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
         }
 
         // --- الجزء الجديد: حفظ الصورة وبيانات الجهاز ---
@@ -118,6 +134,20 @@ class AttendanceController extends Controller
 
         if (!$attendanceLog) {
             return back()->with('error', 'لم يتم العثور على سجل حضور مفتوح.');
+        }
+
+        $credentialId = $request->input('credential_id');
+        if (! $credentialId) {
+            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
+        }
+
+        try {
+            $assertion = Webauthn::validateAssertion($request);
+            if ($credential = WebAuthnCredential::find($credentialId)) {
+                $credential->syncCounter($assertion->getCounter());
+            }
+        } catch (\Throwable $e) {
+            return back()->with('error', 'فشل التحقق من بيانات الدخول.');
         }
 
         // --- الجزء الجديد: حفظ الصورة وبيانات الجهاز ---
