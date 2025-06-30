@@ -11,11 +11,13 @@ use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Carbon\Carbon;
 use NotificationChannels\WebPush\HasPushSubscriptions;
+use Laragear\WebAuthn\Contracts\WebAuthnAuthenticatable;
+use Laragear\WebAuthn\WebAuthnAuthentication;
 
 
-class User extends Authenticatable
+class User extends Authenticatable implements WebAuthnAuthenticatable
 {
-    use HasFactory, Notifiable, HasRoles, HasPushSubscriptions;
+    use HasFactory, Notifiable, HasRoles, HasPushSubscriptions, WebAuthnAuthentication;
 
     protected $fillable = [
         'name',
