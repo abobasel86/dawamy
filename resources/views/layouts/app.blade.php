@@ -179,32 +179,40 @@
                 },
 
                 read(notification) {
-    // إذا كان الإشعار غير مقروء، قم بتحديثه في الواجهة والخادم
-    if (!notification.read_at) {
-        this.totalUnread = Math.max(0, this.totalUnread - 1);
-        
-        let targetNotification = this.latestNotifications.find(n => n.id === notification.id);
-        if (targetNotification) {
-            targetNotification.read_at = new Date().toISOString();
-        }
+                    // If the notification is unread, update it on the frontend and backend
+                    if (!notification.read_at) {
+                        this.totalUnread = Math.max(0, this.totalUnread - 1);
+                        
+                        let targetNotification = this.latestNotifications.find(n => n.id === notification.id);
+                        if (targetNotification) {
+                            // This line updates the UI immediately
+                            targetNotification.read_at = new Date().toISOString();
+                        }
 
-        fetch(`/notifications/${notification.id}/read`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').content
-            }
-        });
-    }
-    
-    // ===== START: الحل النهائي هنا =====
-    // التحقق من وجود الرابط الكامل والانتقال إليه مباشرة
-    if (notification.data.url) {
-        window.location.href = notification.data.url;
-    } else {
-        console.error('Notification URL is missing:', notification);
-    }
-    // ===== END: الحل النهائي هنا =====
-}
+                        // Send a request to the server to mark the notification as read in the database
+                        fetch(`/notifications/${notification.id}/read`, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.head.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json',
+                                'ngrok-skip-browser-warning': 'true' //  <-- The fix is here
+                            }
+                        }).catch(err => console.error('Failed to mark notification as read:', err));
+                    }
+                    
+                    // Check for a URL and redirect after a short delay
+                    // استخلاص رسالة الإشعار
+                    const message = notification.data.message || '';
+
+                    // 🎯 الشرط: إذا كان هناك رابط والإشعار لا يحتوي على كلمة "تفويضك"
+                    if (notification.data.url && !message.includes('تفويضك')) {
+                        // إعادة التوجيه بعد تأخير بسيط للسماح للواجهة بالتحديث
+                        setTimeout(() => {
+                            window.location.href = notification.data.url;
+                        }, 100);
+                    }
+                    // إذا كان الإشعار يخص التفويض، لن يتم عمل أي شيء آخر (لن يتم التوجيه)
+                }
             }
         }
     </script>

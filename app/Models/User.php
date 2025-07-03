@@ -265,4 +265,10 @@ public function pushSubscriptions()
     return $this->hasMany(\NotificationChannels\WebPush\PushSubscription::class);
 }
 
+public function overtimeApprovals()
+{
+    return $this->hasMany(OvertimeRequest::class, 'current_approver_id');
+}
+
+
 }

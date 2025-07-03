@@ -17,6 +17,9 @@
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">وقت الحضور</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">وقت الانصراف</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">مدة العمل</th>
+                                    {{-- START: العمود الجديد --}}
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+                                    {{-- END: العمود الجديد --}}
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -43,10 +46,21 @@
                                                 -
                                             @endif
                                         </td>
+                                        {{-- START: بيانات العمود الجديد --}}
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                @if(str_contains($log->status, 'تأخير')) bg-yellow-100 text-yellow-800
+                                                @elseif(str_contains($log->status, 'إضافي')) bg-blue-100 text-blue-800
+                                                @else bg-green-100 text-green-800 @endif">
+                                                {{ $log->status ?? 'غير محدد' }}
+                                            </span>
+                                        </td>
+                                        {{-- END: بيانات العمود الجديد --}}
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center">لا يوجد سجلات حضور لعرضها.</td>
+                                        {{-- تم تحديث العدد ليناسب عدد الأعمدة الجديد --}}
+                                        <td colspan="5" class="px-6 py-4 text-center">لا يوجد سجلات حضور لعرضها.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

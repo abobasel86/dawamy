@@ -128,77 +128,60 @@
                  <div class="p-6 bg-white border-b border-gray-200">
                      <h3 class="text-lg font-medium text-gray-900 mb-4">سجل طلبات الإجازة</h3>
                      <div class="overflow-x-auto">
-    <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-        <tr>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">نوع الإجازة</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">السبب</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاريخ التقديم</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">تفاصيل المدة</th>
-            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">المدة</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة النهائية</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">تتبع الطلب</th>
-        </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-        @forelse ($leaveRequests as $request)
-    <tr>
-        {{-- 1. نوع الإجازة --}}
-        <td class="px-4 py-4 whitespace-nowrap">{{ $request->leaveType->name }}</td>
-        
-        {{-- 2. السبب --}}
-        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{{ $request->reason }}</td>
-        
-        {{-- 3. تاريخ التقديم --}}
-        <td class="px-4 py-4 whitespace-nowrap">{{ $request->created_at->format('Y-m-d') }}</td>
-        
-        {{-- 4. تفاصيل المدة --}}
-        <td class="px-4 py-4 whitespace-nowrap text-sm">
-            @if ($request->leaveType->unit === 'days')
-                <div>من: {{ \Carbon\Carbon::parse($request->start_date)->format('Y-m-d') }}</div>
-                <div>إلى: {{ \Carbon\Carbon::parse($request->end_date)->format('Y-m-d') }}</div>
-            @else
-                <div>{{ \Carbon\Carbon::parse($request->start_date)->format('Y-m-d') }}</div>
-                <div class="text-xs">
-                    من {{ \Carbon\Carbon::parse($request->start_time)->format('h:i A') }} إلى {{ \Carbon\Carbon::parse($request->end_time)->format('h:i A') }}
-                </div>
-            @endif
-        </td>
-        
-        {{-- 5. المدة --}}
-        <td class="px-4 py-4 whitespace-nowrap text-center">
-            {{ $request->getDurationForHumans() }}
-        </td>
-        
-        {{-- 6. الحالة النهائية --}}
-        <td class="px-4 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                @if($request->status == 'approved') bg-green-100 text-green-800 @endif
-                @if($request->status == 'pending') bg-yellow-100 text-yellow-800 @endif
-                @if($request->status == 'rejected') bg-red-100 text-red-800 @endif
-                @if($request->status == 'cancelled') bg-gray-100 text-gray-800 @endif">
-                @if($request->status == 'approved') موافق عليه @endif
-                @if($request->status == 'pending') قيد المراجعة @endif
-                @if($request->status == 'rejected') مرفوض @endif
-                @if($request->status == 'cancelled') ملغي @endif
-            </span>
-        </td>
-        
-        {{-- 7. تتبع الطلب --}}
-        <td class="px-4 py-4 whitespace-nowrap text-sm">
-            @php $statusDetails = $request->getRequestStatusDetails(); @endphp
-            <span class="{{ $statusDetails['class'] }}">
-                {{ $statusDetails['text'] }}
-            </span>
-        </td>
-    </tr>
-@empty
-    {{-- تم تصحيح colspan ليطابق عدد الأعمدة الصحيح وهو 7 --}}
-    <tr><td colspan="7" class="px-6 py-4 text-center">لا توجد طلبات إجازة حالياً.</td></tr>
-@endforelse
-        </tbody>
-    </table>
-</div>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">نوع الإجازة</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">السبب</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">تاريخ التقديم</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">تفاصيل المدة</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">المدة</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">الحالة النهائية</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">تتبع الطلب</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse ($leaveRequests as $request)
+                                    <tr>
+                                        {{-- Other cells remain the same --}}
+                                        <td class="px-4 py-4 whitespace-nowrap">{{ $request->leaveType->name }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{{ $request->reason }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap">{{ $request->created_at->format('Y-m-d') }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm">...</td>
+                                        <td class="px-4 py-4 whitespace-nowrap text-center">{{ $request->getDurationForHumans() }}</td>
+                                        <td class="px-4 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                                @if($request->status == 'approved') bg-green-100 text-green-800 @endif
+                                                @if($request->status == 'pending') bg-yellow-100 text-yellow-800 @endif
+                                                @if($request->status == 'rejected') bg-red-100 text-red-800 @endif
+                                                @if($request->status == 'cancelled') bg-gray-100 text-gray-800 @endif">
+                                                @if($request->status == 'approved') موافق عليه @endif
+                                                @if($request->status == 'pending') قيد المراجعة @endif
+                                                @if($request->status == 'rejected') مرفوض @endif
+                                                @if($request->status == 'cancelled') ملغي @endif
+                                            </span>
+                                        </td>
+                                        {{-- New Column Data --}}
+                                        <td class="px-4 py-4 whitespace-nowrap text-sm">
+                                            <div>
+                                                @php $statusDetails = $request->getRequestStatusDetails(); @endphp
+                                                <span class="{{ $statusDetails['class'] }}">
+                                                    {{ $statusDetails['text'] }}
+                                                </span>
+                                            </div>
+                                            @if ($request->status == 'rejected' && $request->rejection_reason)
+                                                <div class="text-xs text-gray-500 mt-1 rtl:pr-2">
+                                                    <strong class="font-bold">سبب الرفض:</strong> {{ $request->rejection_reason }}
+                                                </div>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="8" class="px-6 py-4 text-center">لا توجد طلبات إجازة حالياً.</td></tr> {{-- <-- Colspan updated to 8 --}}
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                  </div>
             </div>
         </div>

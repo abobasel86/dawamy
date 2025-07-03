@@ -44,19 +44,24 @@ class ApprovalController extends Controller
         }
 
         $request->validate(['status' => 'required|in:approved,rejected']);
-
         $leaveRequest = $approval->leaveRequest;
-        $approval->update(['status' => $request->status]);
-        
-        if ($request->status === 'rejected') {
+
+            if ($request->status === 'rejected') {
+            // Validate that the rejection reason is provided
+            $request->validate(['rejection_reason' => 'required|string|min:5']);
+            
+            $approval->update(['status' => 'rejected', 'comments' => $request->rejection_reason]);
             $leaveRequest->status = 'rejected';
+            $leaveRequest->rejection_reason = $request->rejection_reason; // Save the rejection reason
             $leaveRequest->save();
-            // إنشاء الرابط وتمريره
+
+            // Notify the user
             $url = route('leaves.index');
             $leaveRequest->user->notify(new LeaveRequestDecision($leaveRequest, $url));
+            
             return redirect()->route('manager.approvals.index')->with('success', 'تم رفض الطلب بنجاح.');
         }
-        
+
         $nextApproval = $leaveRequest->approvals()->where('status', 'pending')->orderBy('level', 'asc')->first();
 
         if ($nextApproval) {

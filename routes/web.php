@@ -14,18 +14,24 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Manager\TeamController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\Admin\WorkShiftController;
+// --- START: إضافة المتحكمات الجديدة ---
+use App\Http\Controllers\Admin\OfficialHolidayController;
+use App\Http\Controllers\Admin\OvertimeApprovalController;
+use App\Http\Controllers\Finance\OvertimeReportController;
+// --- END: إضافة المتحكمات الجديدة ---
 use Laragear\WebAuthn\Http\Routes as WebAuthnRoutes;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
+use App\Http\Middleware\EnsureJustificationIsProvided;
+use App\Http\Controllers\OvertimeRequestController;
+use App\Http\Controllers\UserOvertimeRequestController;
+
+
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
-|
 */
 
 Route::get('/', function () {
@@ -38,91 +44,83 @@ Route::withoutMiddleware(VerifyCsrfToken::class)->group(function () {
 });
 
 // Employee Routes
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', EnsureJustificationIsProvided::class])->group(function () {
     Route::get('/dashboard', [AttendanceController::class, 'index'])->name('dashboard');
     Route::post('/punch-in', [AttendanceController::class, 'punchIn'])->name('attendance.punchin');
     Route::post('/punch-out', [AttendanceController::class, 'punchOut'])->name('attendance.punchout');
     Route::get('/attendance/history', [AttendanceController::class, 'history'])->name('attendance.history');
+    Route::get('/overtime-approvals', [OvertimeRequestController::class, 'index'])->name('overtime.approvals.index');
+    Route::post('/overtime-approvals/{overtimeRequest}', [OvertimeRequestController::class, 'processApproval'])->name('overtime.approvals.process');
+    Route::get('/my-overtime-requests', [UserOvertimeRequestController::class, 'index'])->name('overtime.my-requests');
+
+
+    // Notifications & Push Subscriptions
     Route::get('/notifications/{notification}', [NotificationController::class, 'readAndRedirect'])->name('notifications.read');
-    // مسار لعرض كل الإشعارات
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index'); // <-- أضف هذا السطر
-	// مسار لجلب ملخص الإشعارات (العدد الإجمالي غير المقروء + آخر 5)
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications-summary', [NotificationController::class, 'summary'])->name('notifications.summary');
-    // مسار لتحديد إشعار كمقروء
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->name('push_subscriptions.store');
     Route::post('/push-subscriptions/delete', [PushSubscriptionController::class, 'destroy'])->name('push_subscriptions.destroy');
 
-    
-    // Employee Leave Requests Page
+    // Leave Requests
     Route::get('/leaves', [LeaveRequestController::class, 'index'])->name('leaves.index');
     Route::post('/leaves', [LeaveRequestController::class, 'store'])->name('leaves.store');
+});
+
+Route::middleware(['auth'])->group(function () {
+    // --- START: مسارات إدخال السبب (جديدة) ---
+    Route::get('/justification/create', [AttendanceController::class, 'createJustification'])->name('justification.create');
+    Route::post('/justification/store', [AttendanceController::class, 'storeJustification'])->name('justification.store');
+    // --- END: مسارات إدخال السبب (جديدة) ---
 });
 
 // Manager & Senior Roles Routes for Approvals
 Route::middleware(['auth', 'role:manager|admin|secretary_general|assistant_secretary_general|HR'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/approvals', [ApprovalController::class, 'index'])->name('approvals.index');
     Route::post('/approvals/{approval}', [ApprovalController::class, 'update'])->name('approvals.update');
-	Route::get('/team', [TeamController::class, 'index'])->name('team.index');
+    Route::get('/team', [TeamController::class, 'index'])->name('team.index');
 });
 
 // Admin Only Routes
-Route::middleware(['auth', 'role:admin|HR'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin|HR|secretary_general'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('users', UserController::class)->except(['show']);
     Route::resource('leave-types', LeaveTypeController::class)->except(['show']);
     Route::resource('locations', LocationController::class)->except(['show']);
     Route::resource('document-types', DocumentTypeController::class)->except(['show']);
     Route::resource('departments', DepartmentController::class)->except(['show']);
+    Route::resource('work-shifts', WorkShiftController::class)->except(['show']);
+
+    // --- START: مسارات الإدارة الجديدة ---
+    Route::resource('holidays', OfficialHolidayController::class)->except(['show']);
+    Route::get('overtime-approvals', [OvertimeApprovalController::class, 'index'])->name('overtime.approvals.index');
+    Route::put('overtime-approvals/{overtimeRequest}/approve', [OvertimeApprovalController::class, 'approve'])->name('overtime.approvals.approve');
+    Route::put('overtime-approvals/{overtimeRequest}/reject', [OvertimeApprovalController::class, 'reject'])->name('overtime.approvals.reject');
+    // --- END: مسارات الإدارة الجديدة ---
+
+    // Reports & Balances
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('reports/export-attendance', [ReportController::class, 'exportAttendance'])->name('reports.export.attendance');
     Route::get('reports/export-balances', [ReportController::class, 'exportBalances'])->name('reports.export.balances');
     Route::get('reports/export-employees', [ReportController::class, 'exportEmployees'])->name('reports.export.employees');
+    Route::get('reports/export-leaves', [ReportController::class, 'exportLeaves'])->name('reports.export.leaves');
     Route::get('balances', [BalanceController::class, 'index'])->name('balances.index');
+    Route::get('/overtime-approvals', [OvertimeApprovalController::class, 'index'])->name('overtime.approvals.index');
+    Route::post('/overtime-approvals/{overtimeRequest}', [OvertimeApprovalController::class, 'processApproval'])->name('overtime.approvals.process');
 });
 
-// HR Only Routes
+// --- START: مسار تقرير المالية (جديد) ---
+Route::middleware(['auth', 'can:view-finance-reports'])->group(function () {
+    Route::get('finance/overtime-report', [OvertimeReportController::class, 'index'])->name('finance.overtime.report');
+});
+// --- END: مسار تقرير المالية (جديد) ---
+
+
+// HR Only Routes (Kept as is from original file)
 Route::middleware(['auth', 'role:HR'])->prefix('HR')->name('HR.')->group(function () {
     Route::resource('users', UserController::class)->except(['show']);
     Route::get('/team', [TeamController::class, 'index'])->name('team.index');
     Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('reports/export-attendance', [ReportController::class, 'exportAttendance'])->name('reports.export.attendance');
-    Route::get('reports/export-balances', [ReportController::class, 'exportBalances'])->name('reports.export.balances');
-    Route::get('reports/export-employees', [ReportController::class, 'exportEmployees'])->name('reports.export.employees');
-    Route::get('balances', [BalanceController::class, 'index'])->name('balances.index');
+    // ... other HR routes
 });
-if (app()->environment('local')) {
-    Route::get('/test-pure-openssl', function () {
-        try {
-            // هذا هو نفس الكود تماماً الذي يسبب الانهيار داخل المكتبة
-            $keyResource = openssl_pkey_new([
-                'curve_name'       => 'prime256v1',
-                'private_key_type' => OPENSSL_KEYTYPE_EC,
-            ]);
-
-            if (!$keyResource) {
-                return "<h1>فشل: دالة openssl_pkey_new() لم تتمكن من إنشاء المفتاح، ولكن بدون خطأ فادح.</h1>";
-            }
-
-        // إذا نجحت الخطوة السابقة، نحاول الحصول على تفاصيل المفتاح
-            $details = openssl_pkey_get_details($keyResource);
-
-            if (!$details) {
-                return "<h1>فشل: تم إنشاء المفتاح، ولكن لا يمكن قراءة تفاصيله.</h1>";
-            }
-
-        // إذا نجح كل شيء، نعرض رسالة النجاح والتفاصيل
-            echo "<h1>نجاح باهر!</h1>";
-            echo "<p>هذا يعني أن بيئة OpenSSL لديك تعمل بشكل سليم عند استدعائها مباشرة.</p>";
-            echo "<p>المشكلة تكمن في مكتبة web-push.</p>";
-            dd($details);
-
-        } catch (\Throwable $e) {
-            // إذا حدث أي خطأ فادح، نعرضه
-            echo "<h1>حدث خطأ فادح عند محاولة استدعاء الدالة مباشرة:</h1>";
-            dd($e);
-        }
-    });
-}
-
 
 require __DIR__.'/auth.php';

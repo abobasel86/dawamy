@@ -83,6 +83,8 @@ class UserController extends Controller
             'permanent_date' => 'nullable|date|after_or_equal:probation_end_date',
             'balances' => 'sometimes|array',
             'balances.*.balance' => 'sometimes|integer|min:0',
+            'location_id' => 'nullable|exists:locations,id', // <-- أضف هذا السطر للتحقق
+
         ]);
 
         $user->syncRoles($request->role);

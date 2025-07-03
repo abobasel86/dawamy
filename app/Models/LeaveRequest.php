@@ -14,6 +14,7 @@ class LeaveRequest extends Model
     protected $fillable = [
         'user_id', 'leave_type_id', 'start_date', 'end_date', 'start_time',
         'end_time', 'reason', 'status', 'approved_by', 'delegated_user_id',
+        'rejection_reason',
     ];
 	
 	protected $casts = [
